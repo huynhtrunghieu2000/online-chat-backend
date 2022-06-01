@@ -1,0 +1,22 @@
+###
+# Get all classrooms
+GET http://localhost:3333/classrooms HTTP/1.1
+content-type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MiwiZW1haWwiOiJoaWV1QDEyMy5jb20iLCJmaXJzdF9uYW1lIjpudWxsLCJsYXN0X25hbWUiOm51bGwsImJpbyI6bnVsbCwiaWF0IjoxNjUxNjc3MzM5LCJleHAiOjE2NTE2ODQ1Mzl9.kdanxB6MeC9_yugYmM3_EXT7_JPnRgZIEuFenZmqA3I
+
+###
+# Get one classrooms
+GET http://localhost:3333/classrooms/2 HTTP/1.1
+content-type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MiwiZW1haWwiOiJoaWV1QDEyMy5jb20iLCJmaXJzdF9uYW1lIjpudWxsLCJsYXN0X25hbWUiOm51bGwsImJpbyI6bnVsbCwiaWF0IjoxNjUxNjc3MzM5LCJleHAiOjE2NTE2ODQ1Mzl9.kdanxB6MeC9_yugYmM3_EXT7_JPnRgZIEuFenZmqA3I
+
+
+###
+# Create new classroom
+POST http://localhost:3333/classrooms HTTP/1.1
+content-type: application/json
+
+  {
+    "name": "Huynh's Class",
+    "created_by": 1
+  }
