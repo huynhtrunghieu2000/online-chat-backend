@@ -6,24 +6,12 @@ module.exports = (socket, io, userId) => {
   const joinChannel = async (joinData, callback) => {
     try {
       const channelId = joinData;
-      await User.update(
-        {
-          active_in_channel: channelId,
-        },
-        {
-          where: {
-            id: {
-              [Op.eq]: userId,
-            },
-          },
-        }
-      );
       const channel = await Channel.findOne({
         where: {
           id: channelId,
         },
       });
-      if(!userActiveInChannel[channelId]) {
+      if (!userActiveInChannel[channelId]) {
         userActiveInChannel[channelId] = [];
         userActiveInChannel[channelId].push(userId);
       } else {

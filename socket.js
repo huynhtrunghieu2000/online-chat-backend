@@ -1,5 +1,6 @@
 require("dotenv").config();
 const jwt = require("jsonwebtoken");
+const { Channel } = require("./db");
 
 const registerMessageHandlers = require("./socket-handler/messageHandler");
 const registerChannelHandlers = require("./socket-handler/channelHandler");
@@ -42,6 +43,14 @@ const ioSocketHandler = (io) => {
   io.engine.on("connect_error", (err) => {
     console.log("error");
   });
-  registerMediaSoupHandlers(io);
+  Channel.findAll({
+    where: {
+      type: "video",
+    },
+    attributes: ["id"],
+  }).then((channels) => {
+    const ids = channels.map((channel) => channel.dataValues.id);
+    ids.map((id) => registerMediaSoupHandlers(io, id));
+  });
 };
 module.exports = { ioSocketHandler };

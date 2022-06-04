@@ -5,8 +5,8 @@ function consoleLog(data) {
   console.log(data);
 }
 
-function socketMain(io) {
-  const conferenceIO = io.of("/video-conference");
+function socketMain(io, channelId) {
+  const conferenceIO = io.of(`/video-conference/${channelId}`);
   const MODE_STREAM = "stream";
   const MODE_SHARE_SCREEN = "share_screen";
 
@@ -142,13 +142,13 @@ function socketMain(io) {
     return remoteIds;
   }
 
-  function addProducer(id, producer, kind, mode) {
+  function addProducer(id, producer, kind, mode, userInfo) {
     if (mode == undefined) {
       return;
     }
     if (kind === "video") {
       if (videoProducers[id] == undefined) {
-        videoProducers[id] = {};
+        videoProducers[id] = { userInfo };
       }
       videoProducers[id][mode] = producer;
       consoleLog("addProducer");
@@ -157,9 +157,12 @@ function socketMain(io) {
       consoleLog("videoProducers count=" + Object.keys(videoProducers).length);
     } else if (kind === "audio") {
       if (audioProducers[id] == undefined) {
-        audioProducers[id] = {};
+        audioProducers[id] = { userInfo };
       }
       audioProducers[id][mode] = producer;
+      consoleLog("addProducer");
+
+      consoleLog(audioProducers);
       consoleLog("audioProducers count=" + Object.keys(audioProducers).length);
     } else {
       console.warn("UNKNOWN producer kind=" + kind);
@@ -349,10 +352,11 @@ function socketMain(io) {
     }
   }
 
-  async function createTransport() {
-    const transport = await router.createWebRtcTransport(
-      mediasoupOptions.webRtcTransport
-    );
+  async function createTransport(userInfo) {
+    const transport = await router.createWebRtcTransport({
+      ...mediasoupOptions.webRtcTransport,
+      appData: { userInfo },
+    });
     consoleLog("-- create transport id=" + transport.id);
 
     return {
@@ -362,12 +366,14 @@ function socketMain(io) {
         iceParameters: transport.iceParameters,
         iceCandidates: transport.iceCandidates,
         dtlsParameters: transport.dtlsParameters,
+        info: transport.appData,
       },
     };
   }
 
   async function createConsumer(transport, producer, rtpCapabilities) {
     let consumer = null;
+
     if (
       !router.canConsume({
         producerId: producer.id,
@@ -390,6 +396,10 @@ function socketMain(io) {
         console.error("consume failed", err);
         return;
       });
+    console.log(
+      "🚀 ~ file: mediasoup.js ~ line 394 ~ createConsumer ~ consumer",
+      consumer.appData
+    );
 
     //if (consumer.type === 'simulcast') {
     //  await consumer.setPreferredLayers({ spatialLayer: 2, temporalLayer: 2 });
@@ -426,18 +436,6 @@ function socketMain(io) {
         }
       );
     }
-    const userInfo = userID
-      ? (
-          await User.findOne({
-            where: {
-              id: userID,
-            },
-            attributes: {
-              exclude: ["password", "is_verified", "token"],
-            },
-          })
-        ).dataValues
-      : null;
 
     const message = [];
 
@@ -451,6 +449,7 @@ function socketMain(io) {
       );
       cleanUpPeer(socket);
     });
+
     // socket.on("joinRoom", async ({ channel }, callback) => {
     //   // create Router if it does not exist
     //   // const router1 = rooms[roomName] && rooms[roomName].get('data').router || await createRoom(roomName, socket.id)
@@ -474,6 +473,7 @@ function socketMain(io) {
     //   // call callback from the client and send back the rtpCapabilities
     //   callback({ rtpCapabilities });
     // });
+
     socket.on("getRouterRtpCapabilities", (data, callback) => {
       if (router) {
         consoleLog("getRouterRtpCapabilities: ", router.rtpCapabilities);
@@ -487,8 +487,10 @@ function socketMain(io) {
     socket.on("createProducerTransport", async (data, callback) => {
       consoleLog("-- createProducerTransport ---");
       const mode = data.mode;
+      const userInfo = data.info;
 
-      const { transport, params } = await createTransport();
+      const { transport, params } = await createTransport(userInfo);
+      transport.appData.info = userInfo;
       addProducerTrasport(getId(socket), transport);
       transport.observer.on("close", () => {
         const id = getId(socket);
@@ -515,7 +517,7 @@ function socketMain(io) {
     });
 
     socket.on("produce", async (data, callback) => {
-      const { kind, rtpParameters, mode } = data;
+      const { kind, rtpParameters, mode, userInfo } = data;
       consoleLog("-- produce --- kind=" + kind);
 
       const id = getId(socket);
@@ -524,8 +526,12 @@ function socketMain(io) {
         console.error("transport NOT EXIST for id=" + id);
         return;
       }
-      const producer = await transport.produce({ kind, rtpParameters });
-      addProducer(id, producer, kind, mode);
+      const producer = await transport.produce({
+        kind,
+        rtpParameters,
+      });
+      console.log("~~~~~~produce: ", producer);
+      addProducer(id, producer, kind, mode, userInfo);
       producer.observer.on("close", () => {
         consoleLog("producer closed --- kind=" + kind);
       });
@@ -536,8 +542,10 @@ function socketMain(io) {
       socket.broadcast.emit("newProducer", {
         socketId: id,
         producerId: producer.id,
+        producer,
         kind: producer.kind,
         mode: mode,
+        userInfo: userInfo,
       });
     });
 
@@ -615,6 +623,10 @@ function socketMain(io) {
       }
       const rtpCapabilities = data.rtpCapabilities;
       const remoteId = data.remoteId;
+      const userInfo = {
+        video: videoProducers[remoteId]?.userInfo || {},
+        audio: audioProducers[remoteId]?.userInfo || {},
+      };
       consoleLog(
         "-- consumeAdd - localId=" +
           localId +
@@ -665,7 +677,7 @@ function socketMain(io) {
       });
 
       consoleLog("-- consumer ready ---");
-      sendResponse(params, callback);
+      sendResponse({ ...params, userInfo: userInfo[kind] }, callback);
     });
 
     socket.on("resumeAdd", async (data, callback) => {
