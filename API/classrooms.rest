@@ -20,3 +20,14 @@ content-type: application/json
     "name": "Huynh's Class",
     "created_by": 1
   }
+
+  /classrooms/:id/invite
+
+###
+# invite to classroom
+POST http://localhost:3333/classrooms/1/invite HTTP/1.1
+content-type: application/json
+
+  {
+    "user_id": 2
+  }

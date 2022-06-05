@@ -2,7 +2,8 @@ require("dotenv").config();
 // Load model
 const { Classroom, Channel, ClassroomMember } = require("../db");
 const { Op } = require("sequelize");
-
+const classroomQuery = require('../query/classroom');
+const userQuery = require('../query/user');
 const utils = require("../utils");
 var formidable = require("formidable");
 const jwt = require("jsonwebtoken");
@@ -155,36 +156,21 @@ module.exports.delete = async (req, res, next) => {
 
 module.exports.inviteToClassroom = async (req, res, next) => {
   try {
-    const id = req.body.id;
-    const email = req.body.email;
-    const classroom = await Classroom.findOne({
-      where: {
-        id: id,
-      },
+    const classroomId = req.body.id;
+    const classroom = await classroomQuery.getClassroomById(classroomId);
+    if (!classroom) throw new createHttpError.NotFound('Room not found.');
+
+    const userIds = req.body.user_ids;
+    userIds.forEach(id => {
+      const user = userQuery.getUserById(id);
+      if (!user) throw new createHttpError.NotFound('User not found.');
     });
-    const user = await utils.getUserByEmail(email);
-    if (user) {
-      await ClassroomMember.create({
-        ClassroomId: classroom.dataValues.id,
-        UserId: user.dataValues.id,
-        role: "member",
-      });
-      res.json({
-        status: "success",
-        result: {
-          user: user,
-          classroom: classroom,
-        },
-      });
-    } else {
-      res.json({
-        status: "error",
-        result: {
-          user: null,
-          classroom: classroom,
-        },
-      });
-    }
+
+    userIds.forEach(id => {
+      classroomQuery.addUserToClass(id, classroomId);
+    })
+    
+    res.json({});
   } catch (err) {
     return next(err);
   }

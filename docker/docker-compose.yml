@@ -7,7 +7,7 @@ services:
       POSTGRES_PASSWORD: 1
       POSTGRES_DB: postgres
     volumes:
-      - "E:/04 - PBL/Final PBL/mediasoup/src/pgdata:/var/lib/postgresql/data"
+      - "/Users/hieuhuynht./SupremeTech/Self-learn Project/pgdata:/var/lib/postgresql/data"
     ports:
       - '5432:5432'
   linux:
@@ -20,6 +20,6 @@ services:
     ports:
       - "3333:3333"
       - "2000-2020:2000-2020"
-      - "40000:40100:40000:40100"
+      - "40000-40100:40000-40100"
     volumes:
-      - "E:/04 - PBL/Final PBL/mediasoup/src:/usr/src"
+      - "/Users/hieuhuynht./SupremeTech/Self-learn Project:/usr/src"

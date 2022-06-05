@@ -1,5 +1,5 @@
-const jwt = require("jsonwebtoken");
-const { User } = require("../db");
+const jwt = require('jsonwebtoken');
+const { User } = require('../db');
 
 function consoleLog(data) {
   console.log(data);
@@ -7,24 +7,24 @@ function consoleLog(data) {
 
 function socketMain(io, channelId) {
   const conferenceIO = io.of(`/video-conference/${channelId}`);
-  const MODE_STREAM = "stream";
-  const MODE_SHARE_SCREEN = "share_screen";
+  const MODE_STREAM = 'stream';
+  const MODE_SHARE_SCREEN = 'share_screen';
 
   // ========= mediasoup ===========
-  const mediasoup = require("mediasoup");
+  const mediasoup = require('mediasoup');
   const mediasoupOptions = {
     // Worker settings
     worker: {
       rtcMinPort: 2000,
       rtcMaxPort: 2020,
-      logLevel: "warn",
+      logLevel: 'warn',
       logTags: [
-        "info",
-        "ice",
-        "dtls",
-        "rtp",
-        "srtp",
-        "rtcp",
+        'info',
+        'ice',
+        'dtls',
+        'rtp',
+        'srtp',
+        'rtcp',
         // 'rtx',
         // 'bwe',
         // 'score',
@@ -36,17 +36,17 @@ function socketMain(io, channelId) {
     router: {
       mediaCodecs: [
         {
-          kind: "audio",
-          mimeType: "audio/opus",
+          kind: 'audio',
+          mimeType: 'audio/opus',
           clockRate: 48000,
           channels: 2,
         },
         {
-          kind: "video",
-          mimeType: "video/VP8",
+          kind: 'video',
+          mimeType: 'video/VP8',
           clockRate: 90000,
           parameters: {
-            "x-google-start-bitrate": 1000,
+            'x-google-start-bitrate': 1000,
           },
         },
       ],
@@ -55,8 +55,8 @@ function socketMain(io, channelId) {
     webRtcTransport: {
       listenIps: [
         {
-          ip: "0.0.0.0",
-          announcedIp: "127.0.0.1",
+          ip: '0.0.0.0',
+          announcedIp: '127.0.0.1',
         },
       ],
       enableUdp: true,
@@ -81,12 +81,10 @@ function socketMain(io, channelId) {
     worker = await mediasoup.createWorker(mediasoupOptions.worker);
     router = await worker.createRouter({ mediaCodecs });
     //producerTransport = await router.createWebRtcTransport(mediasoupOptions.webRtcTransport);
-    consoleLog("-- mediasoup worker start. --");
+    consoleLog('-- mediasoup worker start. --');
   }
 
   startWorker();
-
-  let rooms = {};
 
   // --- multi-producers --
   let producerTransports = {};
@@ -99,40 +97,36 @@ function socketMain(io, channelId) {
 
   function addProducerTrasport(id, transport) {
     producerTransports[id] = transport;
-    consoleLog(
-      "producerTransports count=" + Object.keys(producerTransports).length
-    );
+    consoleLog('producerTransports count=' + Object.keys(producerTransports).length);
   }
 
   function removeProducerTransport(id) {
     delete producerTransports[id];
-    consoleLog(
-      "producerTransports count=" + Object.keys(producerTransports).length
-    );
+    consoleLog('producerTransports count=' + Object.keys(producerTransports).length);
   }
 
   function getProducer(id, kind, mode) {
     if (mode == undefined) {
       return;
     }
-    if (kind === "video") {
+    if (kind === 'video') {
       return videoProducers[id] && videoProducers[id][mode];
-    } else if (kind === "audio") {
+    } else if (kind === 'audio') {
       return audioProducers[id] && audioProducers[id][mode];
     } else {
-      console.warn("UNKNOWN producer kind=" + kind);
+      console.warn('UNKNOWN producer kind=' + kind);
     }
   }
 
   function getRemoteIds(clientId, kind) {
     let remoteIds = [];
-    if (kind === "video") {
+    if (kind === 'video') {
       for (const key in videoProducers) {
         if (key !== clientId) {
           remoteIds.push(key);
         }
       }
-    } else if (kind === "audio") {
+    } else if (kind === 'audio') {
       for (const key in audioProducers) {
         if (key !== clientId) {
           remoteIds.push(key);
@@ -146,26 +140,26 @@ function socketMain(io, channelId) {
     if (mode == undefined) {
       return;
     }
-    if (kind === "video") {
+    if (kind === 'video') {
       if (videoProducers[id] == undefined) {
         videoProducers[id] = { userInfo };
       }
       videoProducers[id][mode] = producer;
-      consoleLog("addProducer");
+      consoleLog('addProducer');
 
       consoleLog(videoProducers);
-      consoleLog("videoProducers count=" + Object.keys(videoProducers).length);
-    } else if (kind === "audio") {
+      consoleLog('videoProducers count=' + Object.keys(videoProducers).length);
+    } else if (kind === 'audio') {
       if (audioProducers[id] == undefined) {
         audioProducers[id] = { userInfo };
       }
       audioProducers[id][mode] = producer;
-      consoleLog("addProducer");
+      consoleLog('addProducer');
 
       consoleLog(audioProducers);
-      consoleLog("audioProducers count=" + Object.keys(audioProducers).length);
+      consoleLog('audioProducers count=' + Object.keys(audioProducers).length);
     } else {
-      console.warn("UNKNOWN producer kind=" + kind);
+      console.warn('UNKNOWN producer kind=' + kind);
     }
   }
 
@@ -173,7 +167,7 @@ function socketMain(io, channelId) {
     if (mode == undefined) {
       return false;
     }
-    if (kind === "video") {
+    if (kind === 'video') {
       if (videoProducers[id] && videoProducers[id][mode]) {
         if (mode == MODE_STREAM) {
           delete videoProducers[id];
@@ -182,8 +176,8 @@ function socketMain(io, channelId) {
         }
       }
       console.log(videoProducers);
-      console.log("videoProducers count=" + Object.keys(videoProducers).length);
-    } else if (kind === "audio") {
+      console.log('videoProducers count=' + Object.keys(videoProducers).length);
+    } else if (kind === 'audio') {
       if (audioProducers[id] && audioProducers[id][mode]) {
         if (mode == MODE_STREAM) {
           delete audioProducers[id];
@@ -192,13 +186,13 @@ function socketMain(io, channelId) {
         }
       }
       console.log(audioProducers);
-      console.log("audioProducers count=" + Object.keys(audioProducers).length);
+      console.log('audioProducers count=' + Object.keys(audioProducers).length);
 
       // console.log(
       //     'audioProducers count=' + Object.keys(audioProducers).length
       // );
     } else {
-      console.warn("UNKNOWN producer kind=" + kind);
+      console.warn('UNKNOWN producer kind=' + kind);
     }
   }
 
@@ -213,28 +207,24 @@ function socketMain(io, channelId) {
 
   function addConsumerTrasport(id, transport) {
     consumerTransports[id] = transport;
-    consoleLog(
-      "consumerTransports count=" + Object.keys(consumerTransports).length
-    );
+    consoleLog('consumerTransports count=' + Object.keys(consumerTransports).length);
   }
 
   function removeConsumerTransport(id) {
     delete consumerTransports[id];
-    consoleLog(
-      "consumerTransports count=" + Object.keys(consumerTransports).length
-    );
+    consoleLog('consumerTransports count=' + Object.keys(consumerTransports).length);
   }
 
   function getConsumerSet(localId, kind, mode) {
     if (mode == undefined) {
       return;
     }
-    if (kind === "video") {
+    if (kind === 'video') {
       return videoConsumers[localId] && videoConsumers[localId][mode];
-    } else if (kind === "audio") {
+    } else if (kind === 'audio') {
       return audioConsumers[localId] && audioConsumers[localId][mode];
     } else {
-      console.warn("WARN: getConsumerSet() UNKNWON kind=%s", kind);
+      console.warn('WARN: getConsumerSet() UNKNWON kind=%s', kind);
     }
   }
   function getConsumer(localId, remoteId, kind, mode) {
@@ -256,17 +246,13 @@ function socketMain(io, channelId) {
     const set = getConsumerSet(localId, kind, mode);
     if (set) {
       set[remoteId] = consumer;
-      consoleLog("consumers kind=%s count=%d", kind, Object.keys(set).length);
+      consoleLog('consumers kind=%s count=%d', kind, Object.keys(set).length);
     } else {
-      consoleLog("new set for kind=%s, localId=%s", kind, localId);
+      consoleLog('new set for kind=%s, localId=%s', kind, localId);
       const newSet = {};
       newSet[remoteId] = consumer;
       addConsumerSet(localId, newSet, kind, mode);
-      consoleLog(
-        "consumers kind=%s count=%d",
-        kind,
-        Object.keys(newSet).length
-      );
+      consoleLog('consumers kind=%s count=%d', kind, Object.keys(newSet).length);
     }
   }
 
@@ -282,9 +268,9 @@ function socketMain(io, channelId) {
         delete set[remoteId][mode];
       }
 
-      consoleLog("consumers kind=%s count=%d", kind, Object.keys(set).length);
+      consoleLog('consumers kind=%s count=%d', kind, Object.keys(set).length);
     } else {
-      consoleLog("NO set for kind=%s, localId=%s", kind, localId);
+      consoleLog('NO set for kind=%s, localId=%s', kind, localId);
     }
   }
 
@@ -292,7 +278,7 @@ function socketMain(io, channelId) {
     if (mode == undefined) {
       return;
     }
-    const set = getConsumerSet(localId, "video", mode);
+    const set = getConsumerSet(localId, 'video', mode);
     if (videoConsumers[localId] && videoConsumers[localId][mode]) {
       if (mode == MODE_STREAM) {
         delete videoConsumers[localId];
@@ -308,12 +294,10 @@ function socketMain(io, channelId) {
         delete set[key];
       }
 
-      consoleLog(
-        "removeConsumerSetDeep video consumers count=" + Object.keys(set).length
-      );
+      consoleLog('removeConsumerSetDeep video consumers count=' + Object.keys(set).length);
     }
 
-    const audioSet = getConsumerSet(localId, "audio", mode);
+    const audioSet = getConsumerSet(localId, 'audio', mode);
 
     if (audioConsumers[localId] && audioConsumers[localId][mode]) {
       if (mode == MODE_STREAM) {
@@ -329,26 +313,23 @@ function socketMain(io, channelId) {
         delete audioSet[key];
       }
 
-      consoleLog(
-        "removeConsumerSetDeep audio consumers count=" +
-          Object.keys(audioSet).length
-      );
+      consoleLog('removeConsumerSetDeep audio consumers count=' + Object.keys(audioSet).length);
     }
   }
 
   function addConsumerSet(localId, set, kind, mode) {
-    if (kind === "video") {
+    if (kind === 'video') {
       if (videoConsumers[localId] == undefined) {
         videoConsumers[localId] = {};
       }
       videoConsumers[localId][mode] = set;
-    } else if (kind === "audio") {
+    } else if (kind === 'audio') {
       if (audioConsumers[localId] == undefined) {
         audioConsumers[localId] = {};
       }
       audioConsumers[localId][mode] = set;
     } else {
-      console.warn("WARN: addConsumerSet() UNKNWON kind=%s", kind);
+      console.warn('WARN: addConsumerSet() UNKNWON kind=%s', kind);
     }
   }
 
@@ -357,7 +338,7 @@ function socketMain(io, channelId) {
       ...mediasoupOptions.webRtcTransport,
       appData: { userInfo },
     });
-    consoleLog("-- create transport id=" + transport.id);
+    consoleLog('-- create transport id=' + transport.id);
 
     return {
       transport: transport,
@@ -380,7 +361,7 @@ function socketMain(io, channelId) {
         rtpCapabilities,
       })
     ) {
-      console.error("can not consume");
+      console.error('can not consume');
       return;
     }
 
@@ -390,16 +371,13 @@ function socketMain(io, channelId) {
         // OK
         producerId: producer.id,
         rtpCapabilities,
-        paused: producer.kind === "video",
+        paused: producer.kind === 'video',
       })
       .catch((err) => {
-        console.error("consume failed", err);
+        console.error('consume failed', err);
         return;
       });
-    console.log(
-      "🚀 ~ file: mediasoup.js ~ line 394 ~ createConsumer ~ consumer",
-      consumer.appData
-    );
+    console.log('🚀 ~ file: mediasoup.js ~ line 394 ~ createConsumer ~ consumer', consumer.appData);
 
     //if (consumer.type === 'simulcast') {
     //  await consumer.setPreferredLayers({ spatialLayer: 2, temporalLayer: 2 });
@@ -418,35 +396,45 @@ function socketMain(io, channelId) {
     };
   }
 
-  conferenceIO.on("connection", async (socket) => {
-    consoleLog("conference");
+  const messageList = [];
 
-    let userID = "";
+  conferenceIO.on('connection', async (socket) => {
+    consoleLog('conference');
+
+    let userID = '';
     if (socket.handshake.auth.token) {
-      jwt.verify(
-        socket.handshake.auth.token,
-        process.env.AUTH_SECRET,
-        (err, decoded) => {
-          if (err) {
-            socket.disconnect(false);
-          } else {
-            userID = decoded.id;
-            console.log("💻 Socket conference connected with token", userID);
-          }
+      jwt.verify(socket.handshake.auth.token, process.env.AUTH_SECRET, (err, decoded) => {
+        if (err) {
+          socket.disconnect(false);
+        } else {
+          userID = decoded.id;
+          console.log('💻 Socket conference connected with token', userID);
         }
-      );
+      });
     }
 
-    const message = [];
+    const sendMessage = (message, userInfo) => {
+      messageList.push({
+        message,
+        User: userInfo,
+        createdAt: new Date(),
+      });
+    };
 
-    socket.on("disconnect", function () {
+    socket.on('sendMessage', (data, callback) => {
+      const { message, userInfo } = data;
+      sendMessage(message, userInfo);
+      socket.broadcast.emit('newMessage', messageList);
+      callback(null, messageList);
+    });
+
+    socket.on('getAllMessage', (data, callback) => {
+      sendResponse(messageList, callback);
+    })
+
+    socket.on('disconnect', function () {
       //   close user connection
-      console.log(
-        "client disconnected. socket id=" +
-          getId(socket) +
-          "  , total clients=" +
-          getClientCount()
-      );
+      console.log('client disconnected. socket id=' + getId(socket) + '  , total clients=' + getClientCount());
       cleanUpPeer(socket);
     });
 
@@ -474,35 +462,35 @@ function socketMain(io, channelId) {
     //   callback({ rtpCapabilities });
     // });
 
-    socket.on("getRouterRtpCapabilities", (data, callback) => {
+    socket.on('getRouterRtpCapabilities', (data, callback) => {
       if (router) {
-        consoleLog("getRouterRtpCapabilities: ", router.rtpCapabilities);
+        consoleLog('getRouterRtpCapabilities: ', router.rtpCapabilities);
         sendResponse(router.rtpCapabilities, callback);
       } else {
-        sendReject({ text: "ERROR- router NOT READY" }, callback);
+        sendReject({ text: 'ERROR- router NOT READY' }, callback);
       }
     });
 
     // --- producer ----
-    socket.on("createProducerTransport", async (data, callback) => {
-      consoleLog("-- createProducerTransport ---");
+    socket.on('createProducerTransport', async (data, callback) => {
+      consoleLog('-- createProducerTransport ---');
       const mode = data.mode;
       const userInfo = data.info;
 
       const { transport, params } = await createTransport(userInfo);
       transport.appData.info = userInfo;
       addProducerTrasport(getId(socket), transport);
-      transport.observer.on("close", () => {
+      transport.observer.on('close', () => {
         const id = getId(socket);
-        const videoProducer = getProducer(id, "video", mode);
+        const videoProducer = getProducer(id, 'video', mode);
         if (videoProducer) {
           videoProducer.close();
-          removeProducer(id, "video", mode);
+          removeProducer(id, 'video', mode);
         }
-        const audioProducer = getProducer(id, "audio", mode);
+        const audioProducer = getProducer(id, 'audio', mode);
         if (audioProducer) {
           audioProducer.close();
-          removeProducer(id, "audio", mode);
+          removeProducer(id, 'audio', mode);
         }
         removeProducerTransport(id);
       });
@@ -510,36 +498,36 @@ function socketMain(io, channelId) {
       sendResponse(params, callback);
     });
 
-    socket.on("connectProducerTransport", async (data, callback) => {
+    socket.on('connectProducerTransport', async (data, callback) => {
       const transport = getProducerTrasnport(getId(socket));
       await transport.connect({ dtlsParameters: data.dtlsParameters });
       sendResponse({}, callback);
     });
 
-    socket.on("produce", async (data, callback) => {
+    socket.on('produce', async (data, callback) => {
       const { kind, rtpParameters, mode, userInfo } = data;
-      consoleLog("-- produce --- kind=" + kind);
+      consoleLog('-- produce --- kind=' + kind);
 
       const id = getId(socket);
       const transport = getProducerTrasnport(id);
       if (!transport) {
-        console.error("transport NOT EXIST for id=" + id);
+        console.error('transport NOT EXIST for id=' + id);
         return;
       }
       const producer = await transport.produce({
         kind,
         rtpParameters,
       });
-      console.log("~~~~~~produce: ", producer);
+      console.log('~~~~~~produce: ', producer);
       addProducer(id, producer, kind, mode, userInfo);
-      producer.observer.on("close", () => {
-        consoleLog("producer closed --- kind=" + kind);
+      producer.observer.on('close', () => {
+        consoleLog('producer closed --- kind=' + kind);
       });
       sendResponse({ id: producer.id }, callback);
 
       // inform clients about new producer
-      consoleLog("--broadcast newProducer ---");
-      socket.broadcast.emit("newProducer", {
+      consoleLog('--broadcast newProducer ---');
+      socket.broadcast.emit('newProducer', {
         socketId: id,
         producerId: producer.id,
         producer,
@@ -550,11 +538,11 @@ function socketMain(io, channelId) {
     });
 
     // --- consumer ----
-    socket.on("createConsumerTransport", async (data, callback) => {
-      consoleLog("-- createConsumerTransport -- id=" + getId(socket));
+    socket.on('createConsumerTransport', async (data, callback) => {
+      consoleLog('-- createConsumerTransport -- id=' + getId(socket));
       const { transport, params } = await createTransport();
       addConsumerTrasport(getId(socket), transport);
-      transport.observer.on("close", () => {
+      transport.observer.on('close', () => {
         const localId = getId(socket);
         removeConsumerSetDeep(localId, MODE_STREAM);
         removeConsumerSetDeep(localId, MODE_SHARE_SCREEN);
@@ -571,35 +559,35 @@ function socketMain(io, channelId) {
       sendResponse(params, callback);
     });
 
-    socket.on("connectConsumerTransport", async (data, callback) => {
-      consoleLog("-- connectConsumerTransport -- id=" + getId(socket));
+    socket.on('connectConsumerTransport', async (data, callback) => {
+      consoleLog('-- connectConsumerTransport -- id=' + getId(socket));
       let transport = getConsumerTrasnport(getId(socket));
       if (!transport) {
-        console.error("transport NOT EXIST for id=" + getId(socket));
+        console.error('transport NOT EXIST for id=' + getId(socket));
         return;
       }
       await transport.connect({ dtlsParameters: data.dtlsParameters });
       sendResponse({}, callback);
     });
 
-    socket.on("consume", async (data, callback) => {
-      console.error("-- ERROR: consume NOT SUPPORTED ---");
+    socket.on('consume', async (data, callback) => {
+      console.error('-- ERROR: consume NOT SUPPORTED ---');
       return;
     });
 
-    socket.on("resume", async (data, callback) => {
-      console.error("-- ERROR: resume NOT SUPPORTED ---");
+    socket.on('resume', async (data, callback) => {
+      console.error('-- ERROR: resume NOT SUPPORTED ---');
       return;
     });
 
-    socket.on("getCurrentProducers", async (data, callback) => {
+    socket.on('getCurrentProducers', async (data, callback) => {
       const clientId = data.localId;
-      consoleLog("-- getCurrentProducers for Id=" + clientId);
+      consoleLog('-- getCurrentProducers for Id=' + clientId);
 
-      const remoteVideoIds = getRemoteIds(clientId, "video");
-      consoleLog("-- remoteVideoIds:", remoteVideoIds);
-      const remoteAudioIds = getRemoteIds(clientId, "audio");
-      consoleLog("-- remoteAudioIds:", remoteAudioIds);
+      const remoteVideoIds = getRemoteIds(clientId, 'video');
+      consoleLog('-- remoteVideoIds:', remoteVideoIds);
+      const remoteAudioIds = getRemoteIds(clientId, 'audio');
+      consoleLog('-- remoteAudioIds:', remoteAudioIds);
 
       sendResponse(
         {
@@ -610,15 +598,15 @@ function socketMain(io, channelId) {
       );
     });
 
-    socket.on("consumeAdd", async (data, callback) => {
+    socket.on('consumeAdd', async (data, callback) => {
       const localId = getId(socket);
       const kind = data.kind;
       const mode = data.mode;
-      consoleLog("-- consumeAdd -- localId=%s kind=%s", localId, kind);
+      consoleLog('-- consumeAdd -- localId=%s kind=%s', localId, kind);
 
       let transport = getConsumerTrasnport(localId);
       if (!transport) {
-        console.error("transport NOT EXIST for id=" + localId);
+        console.error('transport NOT EXIST for id=' + localId);
         return;
       }
       const rtpCapabilities = data.rtpCapabilities;
@@ -627,48 +615,27 @@ function socketMain(io, channelId) {
         video: videoProducers[remoteId]?.userInfo || {},
         audio: audioProducers[remoteId]?.userInfo || {},
       };
-      consoleLog(
-        "-- consumeAdd - localId=" +
-          localId +
-          " remoteId=" +
-          remoteId +
-          " kind=" +
-          kind
-      );
+      consoleLog('-- consumeAdd - localId=' + localId + ' remoteId=' + remoteId + ' kind=' + kind);
       const producer = getProducer(remoteId, kind, mode);
       if (!producer) {
-        console.error(
-          "producer NOT EXIST for remoteId=%s kind=%s",
-          remoteId,
-          kind,
-          mode
-        );
+        console.error('producer NOT EXIST for remoteId=%s kind=%s', remoteId, kind, mode);
         return;
       }
 
-      const { consumer, params } = await createConsumer(
-        transport,
-        producer,
-        rtpCapabilities
-      ); // producer must exist before consume
+      const { consumer, params } = await createConsumer(transport, producer, rtpCapabilities); // producer must exist before consume
       //subscribeConsumer = consumer;
       addConsumer(localId, remoteId, consumer, kind, mode); // TODO: MUST comination of  local/remote id
-      consoleLog(
-        "addConsumer localId=%s, remoteId=%s, kind=%s",
-        localId,
-        remoteId,
-        kind
-      );
-      consumer.observer.on("close", () => {
-        consoleLog("consumer closed ---");
+      consoleLog('addConsumer localId=%s, remoteId=%s, kind=%s', localId, remoteId, kind);
+      consumer.observer.on('close', () => {
+        consoleLog('consumer closed ---');
       });
-      consumer.on("producerclose", () => {
-        consoleLog("consumer -- on.producerclose");
+      consumer.on('producerclose', () => {
+        consoleLog('consumer -- on.producerclose');
         consumer.close();
         removeConsumer(localId, remoteId, kind, mode);
 
         // -- notify to client ---
-        socket.emit("producerClosed", {
+        socket.emit('producerClosed', {
           localId: localId,
           remoteId: remoteId,
           kind: kind,
@@ -676,48 +643,43 @@ function socketMain(io, channelId) {
         });
       });
 
-      consoleLog("-- consumer ready ---");
+      consoleLog('-- consumer ready ---');
       sendResponse({ ...params, userInfo: userInfo[kind] }, callback);
     });
 
-    socket.on("resumeAdd", async (data, callback) => {
+    socket.on('resumeAdd', async (data, callback) => {
       const localId = getId(socket);
       const remoteId = data.remoteId;
       const kind = data.kind;
       const mode = data.mode;
-      consoleLog(
-        "-- resumeAdd localId=%s remoteId=%s kind=%s",
-        localId,
-        remoteId,
-        kind
-      );
+      consoleLog('-- resumeAdd localId=%s remoteId=%s kind=%s', localId, remoteId, kind);
       let consumer = getConsumer(localId, remoteId, kind, mode);
       if (!consumer) {
-        console.error("consumer NOT EXIST for remoteId=" + remoteId);
+        console.error('consumer NOT EXIST for remoteId=' + remoteId);
         return;
       }
       await consumer.resume();
       sendResponse({}, callback);
     });
 
-    socket.on("producerStopShareScreen", async (data, callback) => {
+    socket.on('producerStopShareScreen', async (data, callback) => {
       const id = getId(socket);
 
       removeConsumerSetDeep(id, MODE_SHARE_SCREEN);
 
       {
-        const videoProducer = getProducer(id, "video", MODE_SHARE_SCREEN);
+        const videoProducer = getProducer(id, 'video', MODE_SHARE_SCREEN);
         if (videoProducer) {
           videoProducer.close();
-          removeProducer(id, "video", MODE_SHARE_SCREEN);
+          removeProducer(id, 'video', MODE_SHARE_SCREEN);
         }
       }
 
       {
-        const audioProducer = getProducer(id, "audio", MODE_SHARE_SCREEN);
+        const audioProducer = getProducer(id, 'audio', MODE_SHARE_SCREEN);
         if (audioProducer) {
           audioProducer.close();
-          removeProducer(id, "audio", MODE_SHARE_SCREEN);
+          removeProducer(id, 'audio', MODE_SHARE_SCREEN);
         }
       }
 
@@ -728,7 +690,7 @@ function socketMain(io, channelId) {
 
     // ---- sendback welcome message with on connected ---
     const newId = getId(socket);
-    sendback(socket, { type: "welcome", id: newId });
+    sendback(socket, { type: 'welcome', id: newId });
 
     // --- send response to client ---
     function sendResponse(response, callback) {
@@ -742,7 +704,7 @@ function socketMain(io, channelId) {
     }
 
     function sendback(socket, message) {
-      socket.emit("message", message);
+      socket.emit('message', message);
     }
 
     function getId(socket) {
@@ -753,7 +715,7 @@ function socketMain(io, channelId) {
       // WARN: undocumented method to get clients number
 
       var nspSockets = await conferenceIO.allSockets();
-      consoleLog("nspSockets");
+      consoleLog('nspSockets');
       consoleLog(nspSockets);
     };
 
@@ -776,31 +738,31 @@ function socketMain(io, channelId) {
       }
 
       {
-        const videoProducer = getProducer(id, "video", MODE_STREAM);
+        const videoProducer = getProducer(id, 'video', MODE_STREAM);
         if (videoProducer) {
           videoProducer.close();
-          removeProducer(id, "video", MODE_STREAM);
+          removeProducer(id, 'video', MODE_STREAM);
         }
       }
       {
-        const videoProducer = getProducer(id, "video", MODE_SHARE_SCREEN);
+        const videoProducer = getProducer(id, 'video', MODE_SHARE_SCREEN);
         if (videoProducer) {
           videoProducer.close();
-          removeProducer(id, "video", MODE_SHARE_SCREEN);
+          removeProducer(id, 'video', MODE_SHARE_SCREEN);
         }
       }
       {
-        const audioProducer = getProducer(id, "audio", MODE_STREAM);
+        const audioProducer = getProducer(id, 'audio', MODE_STREAM);
         if (audioProducer) {
           audioProducer.close();
-          removeProducer(id, "audio", MODE_STREAM);
+          removeProducer(id, 'audio', MODE_STREAM);
         }
       }
       {
-        const audioProducer = getProducer(id, "audio", MODE_SHARE_SCREEN);
+        const audioProducer = getProducer(id, 'audio', MODE_SHARE_SCREEN);
         if (audioProducer) {
           audioProducer.close();
-          removeProducer(id, "audio", MODE_SHARE_SCREEN);
+          removeProducer(id, 'audio', MODE_SHARE_SCREEN);
         }
       }
 
