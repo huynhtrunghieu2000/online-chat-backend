@@ -24,6 +24,7 @@ module.exports.ChannelModel = (sequelize, Classroom) => {
       // Other model options go here
       freezeTableName: true,
       //tableName: 'tablename',
+      paranoid: true,
       timestamps: true,
     }
   );

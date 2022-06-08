@@ -65,6 +65,7 @@ module.exports.UserModel = (sequelize) => {
       freezeTableName: true,
       //tableName: 'tablename',
       timestamps: true,
+      paranoid: true,
     }
   );
 };

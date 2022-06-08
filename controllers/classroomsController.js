@@ -2,8 +2,8 @@ require("dotenv").config();
 // Load model
 const { Classroom, Channel, ClassroomMember } = require("../db");
 const { Op } = require("sequelize");
-const classroomQuery = require('../query/classroom');
-const userQuery = require('../query/user');
+const classroomQuery = require("../query/classroom");
+const userQuery = require("../query/user");
 const utils = require("../utils");
 var formidable = require("formidable");
 const jwt = require("jsonwebtoken");
@@ -65,7 +65,7 @@ module.exports.getOne = async (req, res, next) => {
     if (classroom) {
       res.json(classroom);
     } else {
-      throw new createHttpError.NotFound('Room not found.');
+      throw new createHttpError.NotFound("Room not found.");
     }
   } catch (err) {
     return next(err);
@@ -79,6 +79,10 @@ module.exports.create = async (req, res, next) => {
     const newClassroom = await Classroom.create({
       ...classroom,
     });
+    console.log(
+      "🚀 ~ file: classroomsController.js ~ line 82 ~ module.exports.create= ~ newClassroom",
+      newClassroom
+    );
 
     await ClassroomMember.create({
       ClassroomId: newClassroom.dataValues.id,
@@ -158,18 +162,18 @@ module.exports.inviteToClassroom = async (req, res, next) => {
   try {
     const classroomId = req.body.id;
     const classroom = await classroomQuery.getClassroomById(classroomId);
-    if (!classroom) throw new createHttpError.NotFound('Room not found.');
+    if (!classroom) throw new createHttpError.NotFound("Room not found.");
 
     const userIds = req.body.user_ids;
-    userIds.forEach(id => {
+    userIds.forEach((id) => {
       const user = userQuery.getUserById(id);
-      if (!user) throw new createHttpError.NotFound('User not found.');
+      if (!user) throw new createHttpError.NotFound("User not found.");
     });
 
-    userIds.forEach(id => {
+    userIds.forEach((id) => {
       classroomQuery.addUserToClass(id, classroomId);
-    })
-    
+    });
+
     res.json({});
   } catch (err) {
     return next(err);

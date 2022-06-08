@@ -8,6 +8,7 @@ const sequelize = new Sequelize(
   {
     host: process.env.DB_HOST,
     dialect: "postgres" /* 'mysql' | 'mariadb' | 'postgres' | 'mssql' */,
+    query: { raw: true },
   }
 );
 
@@ -35,6 +36,9 @@ const Channel = ChannelModel(sequelize, Classroom);
 
 const { MessageModel } = require("./models/Message");
 const Message = MessageModel(sequelize, Channel, User);
+
+const { EventModel } = require("./models/Event");
+const Event = EventModel(sequelize);
 
 // const { InvitationModel } = require("./models/Invitation");
 // const Invitation = InvitationModel(sequelize);
@@ -73,6 +77,15 @@ User.belongsTo(Channel, {
   foreignKey: "active_in_channel",
 });
 
+Event.belongsTo(User, {
+  foreignKey: "user_id",
+  onDelete: "CASCADE",
+});
+User.hasMany(Event, {
+  foreignKey: "user_id",
+  onDelete: "CASCADE",
+});
+
 // Invitation.belongsTo(User, {
 //   foreignKey: { key: "senderId", allowNull: false },
 //   onDelete: "CASCADE",
@@ -95,4 +108,5 @@ module.exports = {
   Channel,
   Message,
   ClassroomMember,
+  Event,
 };

@@ -32,7 +32,7 @@ instrument(io, {
   auth: false,
 });
 
-ioSocketHandler(io);
+// ioSocketHandler(io);
 
 app.use(helmet());
 app.use(morgan("tiny"));

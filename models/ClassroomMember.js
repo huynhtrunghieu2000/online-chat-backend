@@ -13,6 +13,7 @@ module.exports.ClassroomMemberModel = (sequelize, User, Classroom) => {
       // Other model options go here
       freezeTableName: true,
       //tableName: 'tablename',
+      paranoid: true,
       timestamps: true,
     }
   );

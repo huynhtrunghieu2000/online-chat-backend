@@ -20,6 +20,7 @@ module.exports.MessageModel = (sequelize, Channel, User) => {
       freezeTableName: true,
       //tableName: 'tablename',
       timestamps: true,
+      paranoid: true
     }
   );
 };
