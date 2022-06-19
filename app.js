@@ -1,12 +1,10 @@
 require("dotenv").config();
-const { ioSocketHandler } = require("./socket");
+const socketServer = require("./socket-handler/socketServer");
 const express = require("express");
 const https = require("httpolyglot");
 const cors = require("cors");
 const morgan = require("morgan");
 const helmet = require("helmet");
-const { Server } = require("socket.io");
-const { instrument } = require("@socket.io/admin-ui");
 
 const fs = require("fs");
 
@@ -17,22 +15,8 @@ const options = {
   cert: fs.readFileSync("./config/ssl/cert.pem", "utf-8"),
 };
 const server = https.createServer(options, app);
-const io = new Server(server, {
-  transports: ["websocket"],
-  cors: {
-    origin: [process.env.CLIENT_URL, "https://admin.socket.io"],
-    methods: ["GET", "POST"],
-    transports: ["websocket", "polling"],
-    credentials: true,
-  },
-  allowEIO3: true,
-});
 
-instrument(io, {
-  auth: false,
-});
-
-// ioSocketHandler(io);
+socketServer.init(server);
 
 app.use(helmet());
 app.use(morgan("tiny"));
@@ -60,7 +44,8 @@ const taskRoute = require("./routes/taskRoute");
 const userRoute = require("./routes/userRoute");
 const classroomRoute = require("./routes/classroomRoute");
 const channelRoute = require("./routes/channelRoute");
-app.use([taskRoute, userRoute, classroomRoute, channelRoute]); // you can add more routes in this array
+const eventRoute = require("./routes/eventRoute");
+app.use([taskRoute, userRoute, classroomRoute, channelRoute, eventRoute]); // you can add more routes in this array
 
 //404 error
 app.get("*", function (req, res) {

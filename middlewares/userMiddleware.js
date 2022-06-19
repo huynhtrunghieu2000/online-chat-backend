@@ -148,6 +148,7 @@ module.exports.validationUpdateProfile = (req, res, next) => {
         last_name: req.body.last_name,
         bio: req.body.bio,
         email: req.body.email,
+        avatar: req.body.avatar
       },
       { abortEarly: false }
     )

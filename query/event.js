@@ -37,6 +37,7 @@ module.exports.getEventsByUserId = async (userId) => {
     where: {
       user_id: userId,
     },
+    exclude: 'user_id'
   });
 }
 

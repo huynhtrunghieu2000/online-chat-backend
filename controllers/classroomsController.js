@@ -1,36 +1,36 @@
-require("dotenv").config();
+require('dotenv').config();
 // Load model
-const { Classroom, Channel, ClassroomMember } = require("../db");
-const { Op } = require("sequelize");
-const classroomQuery = require("../query/classroom");
-const userQuery = require("../query/user");
-const utils = require("../utils");
-var formidable = require("formidable");
-const jwt = require("jsonwebtoken");
-const crypto = require("crypto");
+const { Classroom, Channel, ClassroomMember, User } = require('../db');
+const { Op } = require('sequelize');
+const classroomQuery = require('../query/classroom');
+const userQuery = require('../query/user');
+const utils = require('../utils');
+var formidable = require('formidable');
+const jwt = require('jsonwebtoken');
+const crypto = require('crypto');
 
-const createHttpError = require("http-errors");
+const createHttpError = require('http-errors');
 
 // Get All - for admin
 module.exports.getAll = async (req, res, next) => {
   try {
-    const { id, is_admin } = jwt.decode(
-      req.headers.authorization.split(" ")[1]
-    );
+    const { id, is_admin } = jwt.decode(req.headers.authorization.split(' ')[1]);
     if (is_admin) {
-      jwt.verify(
-        req.headers.authorization.split(" ")[1],
-        process.env.AUTH_SECRET,
-        (err, decoded) => {
-          if (err) throw err;
-        }
-      );
-      const classrooms = await Classroom.findAll();
+      jwt.verify(req.headers.authorization.split(' ')[1], process.env.AUTH_SECRET, (err, decoded) => {
+        if (err) throw err;
+      });
+      const classrooms = await Classroom.findAll({
+        where: {
+          is_personal: false,
+          deletedAt: null,
+        },
+      });
       res.json(classrooms);
     } else {
       const classroomMember = await ClassroomMember.findAll({
         where: {
           UserId: id,
+          deletedAt: null,
         },
       });
       const classrooms = await Classroom.findAll({
@@ -38,11 +38,15 @@ module.exports.getAll = async (req, res, next) => {
           id: {
             [Op.in]: classroomMember.map((item) => item.ClassroomId),
           },
+          is_personal: false,
         },
       });
+      console.log(classrooms.map((classroom) => classroom.get({ plain: true })));
       res.json(classrooms);
     }
   } catch (err) {
+    console.log(err);
+    console.log(err);
     return next(err);
   }
 };
@@ -50,24 +54,37 @@ module.exports.getAll = async (req, res, next) => {
 // DONE: Get One
 module.exports.getOne = async (req, res, next) => {
   try {
-    const id = req.params.id;
+    const classroomId = req.params.id;
+    console.log(req.params);
+    const { id } = jwt.decode(req.headers.authorization.split(' ')[1]);
+    const isMemberOfRoom = await classroomQuery.isMemberOfRoom(id, classroomId);
+    if (!isMemberOfRoom) throw new createHttpError[404];
     const classroom = await Classroom.findOne({
       where: {
-        id: id,
+        id: classroomId,
+        deletedAt: null,
       },
       include: [
         {
           model: Channel,
-          include: "userActiveInChannel",
+          attributes: ['id', 'name', 'type'],
+        },
+        {
+          model: User,
+          attributes: ['id', 'email', 'avatar', 'first_name', 'last_name'],
+          through: {
+            attributes: ['role'],
+          },
         },
       ],
     });
     if (classroom) {
       res.json(classroom);
     } else {
-      throw new createHttpError.NotFound("Room not found.");
+      throw new createHttpError.NotFound('Room not found.');
     }
   } catch (err) {
+    console.log(err);
     return next(err);
   }
 };
@@ -78,26 +95,24 @@ module.exports.create = async (req, res, next) => {
     const classroom = req.body;
     const newClassroom = await Classroom.create({
       ...classroom,
+      is_personal: false,
     });
-    console.log(
-      "🚀 ~ file: classroomsController.js ~ line 82 ~ module.exports.create= ~ newClassroom",
-      newClassroom
-    );
 
     await ClassroomMember.create({
       ClassroomId: newClassroom.dataValues.id,
       UserId: newClassroom.dataValues.created_by,
-      role: "owner",
+      role: 'owner',
     });
 
     await Channel.create({
-      name: "General",
+      name: 'General',
       ClassroomId: newClassroom.dataValues.id,
-      type: "text",
+      type: 'text',
     });
 
     res.json(newClassroom);
   } catch (err) {
+    console.log(err);
     return next(err);
   }
 };
@@ -105,31 +120,21 @@ module.exports.create = async (req, res, next) => {
 // TODO: Update
 module.exports.update = async (req, res, next) => {
   try {
-    const id = req.body.id;
-    const classroom = req.body.classroom;
-    const status = req.body.status;
+    const id = req.params.id;
+    const classroom = req.body;
+    console.log(classroom);
 
-    const record = await Classroom.update(
-      {
-        classroom: classroom,
-        status: status,
-      },
-      {
-        where: {
-          id: {
-            [Op.eq]: id,
-          },
+    const record = await Classroom.update(classroom, {
+      where: {
+        id: {
+          [Op.eq]: id,
         },
-      }
-    );
-
-    res.json({
-      status: "success",
-      result: {
-        record: req.body,
       },
     });
+    console.log(record);
+    res.json(req.body);
   } catch (err) {
+    console.log(err);
     return next(err);
   }
 };
@@ -137,45 +142,92 @@ module.exports.update = async (req, res, next) => {
 // TODO: Delete - for admin
 module.exports.delete = async (req, res, next) => {
   try {
-    const id = req.body.id;
+    const classroomId = req.body.id;
+    const { id, is_admin } = jwt.decode(req.headers.authorization.split(' ')[1]);
 
-    const deleted = await Classroom.destroy({
-      where: {
-        id: {
-          [Op.eq]: id,
+    const isAdminOfRoom = await classroomQuery.isAdminOfRoom(id, classroomId);
+    if (is_admin || isAdminOfRoom) {
+      const deleted = await Classroom.destroy({
+        where: {
+          id: {
+            [Op.eq]: classroomId,
+          },
         },
-      },
-    });
-
-    res.json({
-      status: "success",
-      result: {
-        affectedRows: deleted,
-      },
-    });
+      });
+      res.json(deleted);
+    } else {
+      throw new createHttpError.BadRequest('You are not admin');
+    }
   } catch (err) {
+    console.log(err);
     return next(err);
   }
 };
 
+// Member ====================
 module.exports.inviteToClassroom = async (req, res, next) => {
   try {
-    const classroomId = req.body.id;
+    const classroomId = req.params.id;
+    console.log(classroomId);
     const classroom = await classroomQuery.getClassroomById(classroomId);
-    if (!classroom) throw new createHttpError.NotFound("Room not found.");
+    if (!classroom) throw new createHttpError.NotFound('Room not found.');
 
-    const userIds = req.body.user_ids;
-    userIds.forEach((id) => {
-      const user = userQuery.getUserById(id);
-      if (!user) throw new createHttpError.NotFound("User not found.");
+    const id = req.body.user_ids[0];
+    console.log('🚀 ~ file: classroomsController.js ~ line 169 ~ module.exports.inviteToClassroom= ~ id', id);
+    // console.log('🚀 ~ file: classroomsController.js ~ line 165 ~ module.exports.inviteToClassroom= ~ userIds', userIds);
+    // userIds.forEach((id) => {
+    // });
+    const user = await userQuery.getUserById(id);
+    if (!user) throw new createHttpError.NotFound('User not found.');
+    await classroomQuery.addUserToClass(id, classroomId);
+    const newClassroom = await Classroom.findOne({
+      where: {
+        id: classroomId,
+      },
+      include: [
+        {
+          model: Channel,
+          attributes: ['id', 'name', 'type'],
+        },
+        {
+          model: User,
+          attributes: ['id', 'email', 'avatar', 'first_name', 'last_name'],
+          through: {
+            attributes: ['role'],
+          },
+        },
+      ],
     });
-
-    userIds.forEach((id) => {
-      classroomQuery.addUserToClass(id, classroomId);
-    });
-
-    res.json({});
+    res.json(newClassroom);
   } catch (err) {
+    console.log(err);
+    return next(err);
+  }
+};
+
+module.exports.updateRole = async (req, res, next) => {
+  try {
+    const classroomId = req.body.id;
+    const userId = req.body.user_id;
+    const role = req.body.role;
+    console.log(req.body);
+    await classroomQuery.updateRoleUserClass(userId, classroomId, role);
+    res.json(classroomId);
+  } catch (err) {
+    console.log(err);
+    return next(err);
+  }
+};
+
+module.exports.leaveRoom = async (req, res, next) => {
+  try {
+    const classroomId = req.body.id;
+    const userId = req.body.user_id;
+    console.log(req.body);
+    const deleted = await classroomQuery.removeUserFromRoom(userId, classroomId);
+    res.json(classroomId);
+  } catch (err) {
+    console.log(err);
     return next(err);
   }
 };
@@ -183,7 +235,7 @@ module.exports.inviteToClassroom = async (req, res, next) => {
 module.exports.createPublicToken = async (req, res, next) => {
   try {
     const classroomId = req.body.id;
-    const token = crypto.randomBytes(16).toString("hex");
+    const token = crypto.randomBytes(16).toString('hex');
     const record = await Classroom.update({
       where: {
         id: {
@@ -197,6 +249,7 @@ module.exports.createPublicToken = async (req, res, next) => {
 
     res.json(record);
   } catch (err) {
+    console.log(err);
     return next(err);
   }
 };
@@ -217,6 +270,7 @@ module.exports.deletePublicToken = async (req, res, next) => {
 
     res.json(record);
   } catch (err) {
+    console.log(err);
     return next(err);
   }
 };
@@ -228,23 +282,20 @@ module.exports.updatePicture = (req, res, next) => {
     const id = fields.id;
 
     if (!id) {
-      var err = new Error("ID not found.");
+      var err = new Error('ID not found.');
       return next(err);
     } else {
-      if (
-        files.filetoupload.name &&
-        !files.filetoupload.name.match(/\.(jpg|jpeg|png)$/i)
-      ) {
-        var err = new Error("Please select .jpg or .png file only");
+      if (files.filetoupload.name && !files.filetoupload.name.match(/\.(jpg|jpeg|png)$/i)) {
+        var err = new Error('Please select .jpg or .png file only');
         return next(err);
       } else if (files.filetoupload.size > 2097152) {
-        var err = new Error("Please select file size < 2mb");
+        var err = new Error('Please select file size < 2mb');
         return next(err);
       } else {
         var newFileName = utils.timestampFilename(files.filetoupload.name);
 
         var oldpath = files.filetoupload.path;
-        var newpath = __basedir + "/public/uploads/pictures/" + newFileName;
+        var newpath = __basedir + '/public/uploads/pictures/' + newFileName;
         fs.rename(oldpath, newpath, function (err) {
           if (err) {
             return next(err);
@@ -264,7 +315,7 @@ module.exports.updatePicture = (req, res, next) => {
           )
             .then((updated) => {
               res.json({
-                status: "success",
+                status: 'success',
                 result: {
                   newFileName: newFileName,
                   affectedRows: updated,

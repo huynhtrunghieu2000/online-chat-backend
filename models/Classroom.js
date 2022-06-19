@@ -22,6 +22,11 @@ module.exports.ClassroomModel = (sequelize) => {
         type: DataTypes.INTEGER,
         allowNull: false,
       },
+      is_personal: {
+        type: DataTypes.BOOLEAN,
+        allowNull: false,
+        default: false,
+      }
     },
     {
       // Other model options go here

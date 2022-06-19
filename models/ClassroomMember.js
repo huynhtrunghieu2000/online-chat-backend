@@ -4,6 +4,12 @@ module.exports.ClassroomMemberModel = (sequelize, User, Classroom) => {
   return sequelize.define(
     "ClassroomMember",
     {
+      id: {
+        type: DataTypes.INTEGER,
+        primaryKey: true,
+        autoIncrement: true,
+        allowNull: false,
+      },
       role: {
         type: DataTypes.ENUM("owner", "admin", "member"),
         allowNull: false,

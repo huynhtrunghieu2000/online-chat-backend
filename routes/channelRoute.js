@@ -9,4 +9,6 @@ const channelController = require("../controllers/channelsController");
 
 router.get("/channels/:id", channelController.getOne);
 router.post("/channels", channelController.create);
+router.put("/channels/:id", channelController.update);
+router.delete("/channels/:id", channelController.delete);
 module.exports = router;

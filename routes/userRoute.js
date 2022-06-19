@@ -26,7 +26,8 @@ router.post(
 ); // sends verification link to user
 router.get('/user/signup/verify/:token', usersController.signUpVerify); // verify user link when clicked
 router.post('/user/login', [validateLogin], usersController.login);
-router.get('/user', [authenticateToken], usersController.getLoggedInUser); // get logged in user
+router.get('/user/me', [authenticateToken], usersController.getLoggedInUser); // get logged in user
+router.get('/user', [authenticateToken], usersController.searchUser); // get logged in user
 router.post(
 	'/user/update_profile',
 	[authenticateToken, validationUpdateProfile, isUserExistsUpdate],

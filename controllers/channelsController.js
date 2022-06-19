@@ -7,7 +7,7 @@ const utils = require("../utils");
 const nodemailer = require("nodemailer");
 var formidable = require("formidable");
 var fs = require("fs");
-
+const socketServer = require('../socket-handler/socketServer');
 // Get All
 module.exports.getAll = async (req, res, next) => {
   try {
@@ -17,6 +17,7 @@ module.exports.getAll = async (req, res, next) => {
       result: channels,
     });
   } catch (err) {
+    console.log(err);
     return next(err);
   }
 };
@@ -43,6 +44,7 @@ module.exports.getOne = async (req, res, next) => {
     });
     res.json(channel);
   } catch (err) {
+    console.log(err);
     return next(err);
   }
 };
@@ -56,9 +58,11 @@ module.exports.create = async (req, res, next) => {
       ...channel,
       ClassroomId: classroomId,
     });
-
+    console.log(record.dataValues.id);
+    socketServer.initConferenceNameSpaceRoom(record.dataValues.id)
     res.json(record);
   } catch (err) {
+    console.log(err);
     return next(err);
   }
 };
@@ -67,14 +71,10 @@ module.exports.create = async (req, res, next) => {
 module.exports.update = async (req, res, next) => {
   try {
     const id = req.body.id;
-    const channel = req.body.channel;
-    const status = req.body.status;
-
+    const channel = req.body;
+    console.log(req.body);
     const record = await Channel.update(
-      {
-        channel: channel,
-        status: status,
-      },
+      channel,
       {
         where: {
           id: {
@@ -84,13 +84,9 @@ module.exports.update = async (req, res, next) => {
       }
     );
 
-    res.json({
-      status: "success",
-      result: {
-        record: req.body,
-      },
-    });
+    res.json(req.body);
   } catch (err) {
+    console.log(err);
     return next(err);
   }
 };
@@ -99,7 +95,7 @@ module.exports.update = async (req, res, next) => {
 module.exports.delete = async (req, res, next) => {
   try {
     const id = req.body.id;
-
+    console.log(id)
     const deleted = await Channel.destroy({
       where: {
         id: {
@@ -108,13 +104,9 @@ module.exports.delete = async (req, res, next) => {
       },
     });
 
-    res.json({
-      status: "success",
-      result: {
-        affectedRows: deleted,
-      },
-    });
+    res.json(deleted);
   } catch (err) {
+    console.log(err);
     return next(err);
   }
 };
@@ -214,6 +206,7 @@ module.exports.sendEmail = async (req, res, next) => {
       result: result,
     });
   } catch (err) {
+    console.log(err);
     return next(err);
   }
 };

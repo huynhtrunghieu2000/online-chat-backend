@@ -1,13 +1,14 @@
-require("dotenv").config();
+require('dotenv').config();
 // Load model
-const { User } = require("../db");
-const { Op } = require("sequelize");
+const { User, Classroom } = require('../db');
+const { Op } = require('sequelize');
 
-const utils = require("../utils");
-const nodemailer = require("nodemailer");
-const bcrypt = require("bcryptjs");
-const crypto = require("crypto");
-const jwt = require("jsonwebtoken");
+const utils = require('../utils');
+const nodemailer = require('nodemailer');
+const bcrypt = require('bcryptjs');
+const crypto = require('crypto');
+const jwt = require('jsonwebtoken');
+const createHttpError = require('http-errors');
 
 // SignUp
 module.exports.signUp = async (req, res, next) => {
@@ -19,7 +20,7 @@ module.exports.signUp = async (req, res, next) => {
     var hash = bcrypt.hashSync(req.body.password, salt);
     const password = hash;
 
-    const token = crypto.randomBytes(16).toString("hex");
+    const token = crypto.randomBytes(16).toString('hex');
 
     const numberOfUsers = await User.count();
     const record = await User.create({
@@ -43,7 +44,7 @@ module.exports.signUp = async (req, res, next) => {
     var mailOptions = {
       from: process.env.MAIL_FROM,
       to: email,
-      subject: "Thank you for signing up",
+      subject: 'Thank you for signing up',
       html: `Congratulations!<br/><br/>
         You have successfully signed up. Please click the link below to verify your account:<br/>
         <a href="${verificationLink}" target="_blank">Verify email</a><br/><br/>
@@ -53,7 +54,7 @@ module.exports.signUp = async (req, res, next) => {
     await transporter.sendMail(mailOptions);
 
     return res.json({
-      status: "success",
+      status: 'success',
       result: {
         record: record,
       },
@@ -77,7 +78,7 @@ module.exports.signUpVerify = async (req, res, next) => {
     if (user) {
       const record = await User.update(
         {
-          token: "",
+          token: '',
           is_verified: true,
         },
         {
@@ -90,11 +91,11 @@ module.exports.signUpVerify = async (req, res, next) => {
       );
 
       return res.json({
-        status: "success",
+        status: 'success',
       });
     } else {
-      let err = new Error("Invalid token provided or user already verified");
-      err.field = "token";
+      let err = new Error('Invalid token provided or user already verified');
+      err.field = 'token';
       return next(err);
     }
   } catch (err) {
@@ -128,17 +129,17 @@ module.exports.login = async (req, res, next) => {
         return res.json({
           user: userData,
           token: jwt.sign(userData, process.env.AUTH_SECRET, {
-            expiresIn: "2h",
+            expiresIn: '7d',
           }), // Expires in 2 Hour
         });
       } else {
-        let err = new Error("Invalid email or password entered");
-        err.field = "login";
+        let err = new Error('Invalid email or password entered');
+        err.field = 'login';
         return next(err);
       }
     } else {
-      let err = new Error("Invalid email or password entered");
-      err.field = "login";
+      let err = new Error('Invalid email or password entered');
+      err.field = 'login';
       return next(err);
     }
   } catch (err) {
@@ -147,26 +148,29 @@ module.exports.login = async (req, res, next) => {
 };
 
 // Get Logged in user
-module.exports.getLoggedInUser = (req, res, next) => {
+module.exports.getLoggedInUser = async (req, res, next) => {
   var token = req.headers.authorization;
   if (token) {
     // verifies secret and checks if the token is expired
-    jwt.verify(
-      token.replace(/^Bearer\s/, ""),
-      process.env.AUTH_SECRET,
-      (err, decoded) => {
-        if (err) {
-          let err = new Error("Unauthorized");
-          err.field = "login";
-          return next(err);
-        } else {
-          return res.json({ status: "success", user: decoded });
-        }
-      }
-    );
+    let id = -1;
+    jwt.verify(token.replace(/^Bearer\s/, ''), process.env.AUTH_SECRET, (err, decoded) => {
+      if (err) {
+        let err = new Error('Unauthorized');
+        err.field = 'login';
+        return next(err);
+      } else id = decoded.id;
+    });
+    console.log(id);
+    const user = await User.findOne({
+      where: {
+        id: id,
+        is_verified: true,
+      },
+    });
+    return res.json({ status: 'success', user: user });
   } else {
-    let err = new Error("Unauthorized");
-    err.field = "login";
+    let err = new Error('Unauthorized');
+    err.field = 'login';
     return next(err);
   }
 };
@@ -174,11 +178,12 @@ module.exports.getLoggedInUser = (req, res, next) => {
 // Update Profile
 module.exports.updateProfile = async (req, res, next) => {
   try {
-    var id = req.user.id;
-    var first_name = req.body.first_name;
-    var last_name = req.body.last_name;
-    var bio = req.body.bio;
-    var email = req.body.email;
+    const id = req.user.id;
+    const first_name = req.body.first_name;
+    const last_name = req.body.last_name;
+    const bio = req.body.bio;
+    const email = req.body.email;
+    const avatar = req.body.avatar;
 
     const result = User.update(
       {
@@ -186,6 +191,7 @@ module.exports.updateProfile = async (req, res, next) => {
         last_name: last_name,
         bio: bio,
         email: email,
+        avatar: avatar,
       },
       {
         where: {
@@ -197,7 +203,7 @@ module.exports.updateProfile = async (req, res, next) => {
     );
 
     return res.json({
-      status: "success",
+      status: 'success',
       result: req.body,
     });
   } catch (err) {
@@ -206,32 +212,47 @@ module.exports.updateProfile = async (req, res, next) => {
 };
 
 // Change Password
-module.exports.changePassword = (req, res, next) => {
+module.exports.changePassword = async (req, res, next) => {
   try {
-    var id = req.user.id;
-
-    // encrypt password
-    var salt = bcrypt.genSaltSync(10);
-    var hash = bcrypt.hashSync(req.body.new_password, salt);
-    const new_password = hash;
-
-    const result = User.update(
-      {
-        password: new_password,
-      },
-      {
-        where: {
-          id: {
-            [Op.eq]: id,
-          },
-        },
-      }
-    );
-
-    return res.json({
-      status: "success",
-      result: req.user,
+    console.log(req.body);
+    const token = req.headers.authorization;
+    let id = -1;
+    jwt.verify(token.replace(/^Bearer\s/, ''), process.env.AUTH_SECRET, (err, decoded) => {
+      if (err) {
+        let err = new Error('Unauthorized');
+        err.field = 'login';
+        return next(err);
+      } else id = decoded.id;
     });
+    const user = await User.findOne({
+      where: {
+        id: id,
+        is_verified: true,
+      },
+    });
+    if (user) {
+      const isMatched = await bcrypt.compare(req.body.old_password, user.password);
+      if (isMatched) {
+        // encrypt password
+        var salt = bcrypt.genSaltSync(10);
+        var hash = bcrypt.hashSync(req.body.new_password, salt);
+        const new_password = hash;
+        const result = User.update(
+          {
+            password: new_password,
+          },
+          {
+            where: {
+              id: {
+                [Op.eq]: id,
+              },
+            },
+          }
+        );
+
+        return res.json({});
+      } else throw new createHttpError.BadRequest('Old password not match');
+    } else throw new createHttpError.BadRequest('Something wrong...');
   } catch (err) {
     return next(err);
   }
@@ -241,7 +262,7 @@ module.exports.changePassword = (req, res, next) => {
 module.exports.forgotPassword = async (req, res, next) => {
   try {
     var email = req.body.email;
-    var token = crypto.randomBytes(16).toString("hex");
+    var token = crypto.randomBytes(16).toString('hex');
 
     const result = await User.update(
       {
@@ -271,7 +292,7 @@ module.exports.forgotPassword = async (req, res, next) => {
     var mailOptions = {
       from: process.env.MAIL_FROM,
       to: email,
-      subject: "Reset password",
+      subject: 'Reset password',
       html: `Hi there! <br/><br/>
 			Please click on the link below to reset your password:<br/>
 			<a href="${verificationLink}" target="_blank">${verificationLink}</a><br/><br/>
@@ -281,7 +302,7 @@ module.exports.forgotPassword = async (req, res, next) => {
     await transporter.sendMail(mailOptions);
 
     return res.json({
-      status: "success",
+      status: 'success',
       result: result,
     });
   } catch (err) {
@@ -302,12 +323,12 @@ module.exports.forgotPasswordVerify = async (req, res, next) => {
 
     if (user) {
       return res.json({
-        message: "Validation link passed",
-        type: "success",
+        message: 'Validation link passed',
+        type: 'success',
       });
     } else {
-      let err = new Error("Invalid token provided");
-      err.field = "token";
+      let err = new Error('Invalid token provided');
+      err.field = 'token';
       return next(err);
     }
   } catch (err) {
@@ -327,7 +348,7 @@ module.exports.resetPassword = async (req, res, next) => {
     const result = await User.update(
       {
         password: new_password,
-        token: "",
+        token: '',
       },
       {
         where: {
@@ -339,7 +360,7 @@ module.exports.resetPassword = async (req, res, next) => {
     );
 
     return res.json({
-      status: "success",
+      status: 'success',
       result: result,
     });
   } catch (err) {
@@ -349,7 +370,8 @@ module.exports.resetPassword = async (req, res, next) => {
 
 module.exports.searchUser = async (req, res, next) => {
   try {
-    var search = req.body.search;
+    var search = req.query.search;
+    console.log(search);
     var users = await User.findAll({
       where: {
         [Op.or]: [
@@ -370,10 +392,15 @@ module.exports.searchUser = async (req, res, next) => {
           },
         ],
       },
+      attributes: ['id', 'email', 'first_name', 'last_name', 'avatar'],
+      include: {
+        model: Classroom,
+      },
     });
-
+    console.log(users);
     return res.json(users);
   } catch (err) {
+    console.log(err);
     return next(err);
   }
 };

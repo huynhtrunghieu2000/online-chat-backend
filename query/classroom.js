@@ -2,34 +2,83 @@ const { Classroom, Channel, ClassroomMember } = require('../db');
 const { Op } = require('sequelize');
 
 module.exports.getClassroomById = async (classId) => {
-  return await ClassroomMember.findOne({
+  return await Classroom.findOne({
     where: {
       id: classId,
     },
   });
 };
 
-module.exports.addUserToClass = async (userId, classId) => {
-  await ClassroomMember.create({
-    ClassroomId: classId,
-    UserId: userId,
-    role: 'member',
+module.exports.addUserToClass = async (userId, classroomId) => {
+  const isAddedBefore = await ClassroomMember.findOne({
+    where: {
+      ClassroomId: classroomId,
+      UserId: userId,
+    },
+    paranoid: false,
   });
+  console.log(isAddedBefore);
+  if (isAddedBefore) {
+    return await ClassroomMember.restore(
+      {
+        role: 'member',
+        deletedAt: null,
+      },
+      {
+        where: {
+          ClassroomId: classroomId,
+          UserId: userId,
+        },
+      }
+    );
+  } else {
+    return await ClassroomMember.create({
+      ClassroomId: classroomId,
+      UserId: userId,
+      role: 'member',
+    });
+  }
 };
 
 module.exports.updateRoleUserClass = async (userId, classId, role) => {
   await ClassroomMember.update(
     {
-      ClassroomId: classId,
-      UserId: userId,
       role: role,
     },
     {
       where: {
-        id: {
-          [Op.eq]: id,
-        },
+        ClassroomId: classId,
+        UserId: userId,
       },
     }
   );
+};
+
+module.exports.isAdminOfRoom = async (userId, classroomId) => {
+  return ClassroomMember.findOne({
+    where: {
+      ClassroomId: classroomId,
+      UserId: userId,
+      role: 'owner',
+      deletedAt: null,
+    },
+  });
+};
+module.exports.isMemberOfRoom = async (userId, classroomId) => {
+  return ClassroomMember.findOne({
+    where: {
+      ClassroomId: classroomId,
+      UserId: userId,
+      deletedAt: null,
+    },
+  });
+};
+
+module.exports.removeUserFromRoom = async (userId, classroomId) => {
+  return ClassroomMember.destroy({
+    where: {
+      ClassroomId: classroomId,
+      UserId: userId,
+    },
+  });
 };
