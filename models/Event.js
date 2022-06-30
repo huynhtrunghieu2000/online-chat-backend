@@ -1,8 +1,8 @@
-const { DataTypes } = require("sequelize");
+const { DataTypes } = require('sequelize');
 
 module.exports.EventModel = (sequelize) => {
   return sequelize.define(
-    "Event",
+    'Event',
     {
       id: {
         type: DataTypes.INTEGER,
@@ -24,6 +24,18 @@ module.exports.EventModel = (sequelize) => {
       },
       description: {
         type: DataTypes.STRING,
+        allowNull: true,
+      },
+      location: {
+        type: DataTypes.JSON,
+        allowNull: true,
+      },
+      created_by: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+      },
+      origin_event: {
+        type: DataTypes.INTEGER,
         allowNull: true,
       },
     },

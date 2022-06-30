@@ -22,10 +22,14 @@ module.exports.ClassroomModel = (sequelize) => {
         type: DataTypes.INTEGER,
         allowNull: false,
       },
-      is_personal: {
+      is_private: {
         type: DataTypes.BOOLEAN,
         allowNull: false,
-        default: false,
+        defaultValues: false,
+      },
+      code: {
+        type: DataTypes.STRING,
+        allowNull: true,
       }
     },
     {

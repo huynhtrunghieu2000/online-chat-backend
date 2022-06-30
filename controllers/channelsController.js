@@ -1,6 +1,6 @@
 require("dotenv").config();
 // Load model
-const { Channel, Message, User } = require("../db");
+const { Channel, Message, User, Attachment } = require("../db");
 const { Op } = require("sequelize");
 
 const utils = require("../utils");
@@ -26,6 +26,11 @@ module.exports.getAll = async (req, res, next) => {
 module.exports.getOne = async (req, res, next) => {
   try {
     const id = req.params.id;
+    // const amount = await Message.count({
+    //   where: {
+    //     ChannelId: id
+    //   }
+    // });
     const channel = await Channel.findOne({
       where: {
         id: id,
@@ -38,7 +43,13 @@ module.exports.getOne = async (req, res, next) => {
               model: User,
               attributes: ["id", "full_name", "email", "avatar"],
             },
+            {
+              model: Attachment,
+            },
           ],
+          // order: [['createdAt', 'ASC']],
+          // limit: 15,
+          // offset: amount - 15
         },
       ],
     });

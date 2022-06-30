@@ -54,4 +54,10 @@ router.post(
 	usersController.resetPassword
 ); // reset to new password
 
+router.put(
+	'/user/notification',
+	[authenticateToken],
+	usersController.updateReadNotification
+); // reset to new password
+
 module.exports = router;

@@ -9,6 +9,15 @@ module.exports.getClassroomById = async (classId) => {
   });
 };
 
+module.exports.getClassroomByCode = async (code) => {
+  return await Classroom.findOne({
+    where: {
+      code: code,
+      is_private: false
+    },
+  });
+};
+
 module.exports.addUserToClass = async (userId, classroomId) => {
   const isAddedBefore = await ClassroomMember.findOne({
     where: {
@@ -17,7 +26,7 @@ module.exports.addUserToClass = async (userId, classroomId) => {
     },
     paranoid: false,
   });
-  console.log(isAddedBefore);
+
   if (isAddedBefore) {
     return await ClassroomMember.restore(
       {
@@ -52,6 +61,16 @@ module.exports.updateRoleUserClass = async (userId, classId, role) => {
       },
     }
   );
+};
+
+module.exports.getUserIdsInRoom = async (classroomId) => {
+  const list = await ClassroomMember.findAll({
+    where: {
+      ClassroomId: classroomId,
+    },
+    attributes: ['UserId']
+  });
+  return list.map((item) => item.get({ plain: true}).UserId);
 };
 
 module.exports.isAdminOfRoom = async (userId, classroomId) => {

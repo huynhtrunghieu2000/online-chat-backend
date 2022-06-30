@@ -31,3 +31,16 @@ content-type: application/json
   {
     "user_id": 2
   }
+
+###
+# invite to classroom
+POST http://localhost:3333/classrooms/1/event HTTP/1.1
+content-type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MiwiZW1haWwiOiJodXluaHRydW5naGlldTIwMDBAZ21haWwuY29tIiwiZmlyc3RfbmFtZSI6IkhpZXUiLCJsYXN0X25hbWUiOiJIdXluaCIsImJpbyI6IkZFIERldiIsImlzX2FkbWluIjpmYWxzZSwiaWF0IjoxNjU2MTcxMTQ0LCJleHAiOjE2NTY3NzU5NDR9.yHICiZxZvc-FQ9_m2JsCGkmUa-UHjDglgJjBgJ4c8wo
+
+  {
+    "id": 5,
+    "event": {
+      "name": "alo?"
+    }
+  }

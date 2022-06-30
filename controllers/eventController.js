@@ -7,7 +7,7 @@ const utils = require('../utils');
 const nodemailer = require('nodemailer');
 var formidable = require('formidable');
 var fs = require('fs');
-const jwt = require("jsonwebtoken");
+const jwt = require('jsonwebtoken');
 
 const eventQuery = require('../query/event');
 const createHttpError = require('http-errors');
@@ -27,12 +27,11 @@ const createHttpError = require('http-errors');
 
 module.exports.getAllByUserId = async (req, res, next) => {
   try {
-    const { id, is_admin } = jwt.decode(
-      req.headers.authorization.split(" ")[1]
-    );
+    const { id, is_admin } = jwt.decode(req.headers.authorization.split(' ')[1]);
     const tasks = await eventQuery.getEventsByUserId(id);
     res.json(tasks);
   } catch (err) {
+    console.log(err);
     return next(err);
   }
 };
@@ -46,6 +45,7 @@ module.exports.getOne = async (req, res, next) => {
     if (!event) throw new createHttpError.NotFound('Event not found');
     res.json(event);
   } catch (err) {
+    console.log(err);
     return next(err);
   }
 };
@@ -53,15 +53,14 @@ module.exports.getOne = async (req, res, next) => {
 // Create
 module.exports.create = async (req, res, next) => {
   try {
-    const { id, is_admin } = jwt.decode(
-      req.headers.authorization.split(" ")[1]
-    );
-    const event = {...req.body, user_id: id};
-    console.log(event)
+    const { id, is_admin } = jwt.decode(req.headers.authorization.split(' ')[1]);
+    const event = { ...req.body, user_id: id, created_by: id };
+    console.log(event);
     const record = await eventQuery.createNewEvent(event);
     if (!record) throw new createHttpError.InternalServerError('Something wrong');
     res.json(record);
   } catch (err) {
+    console.log(err);
     return next(err);
   }
 };
@@ -69,10 +68,11 @@ module.exports.create = async (req, res, next) => {
 // Update
 module.exports.update = async (req, res, next) => {
   try {
-    const {id, ...event} = req.body;
+    const { id, ...event } = req.body;
     const record = await eventQuery.updateEventById(id, event);
     res.json(req.body);
   } catch (err) {
+    console.log(err);
     return next(err);
   }
 };
@@ -81,10 +81,11 @@ module.exports.update = async (req, res, next) => {
 module.exports.delete = async (req, res, next) => {
   try {
     const id = req.body.id;
-    const deleted = await eventQuery.deleteEventById(id)
+    const deleted = await eventQuery.deleteEventById(id);
     if (deleted) res.json(deleted);
     else throw new createHttpError.BadGateway('Cant delete');
   } catch (err) {
+    console.log(err);
     return next(err);
   }
 };
@@ -181,6 +182,7 @@ module.exports.sendEmail = async (req, res, next) => {
       result: result,
     });
   } catch (err) {
+    console.log(err);
     return next(err);
   }
 };

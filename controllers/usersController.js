@@ -1,6 +1,6 @@
 require('dotenv').config();
 // Load model
-const { User, Classroom } = require('../db');
+const { User, Classroom, Notification } = require('../db');
 const { Op } = require('sequelize');
 
 const utils = require('../utils');
@@ -9,6 +9,8 @@ const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
 const createHttpError = require('http-errors');
+
+const notificationQuery = require('../query/notification');
 
 // SignUp
 module.exports.signUp = async (req, res, next) => {
@@ -114,6 +116,10 @@ module.exports.login = async (req, res, next) => {
         email: email,
         is_verified: true,
       },
+      include: {
+        model: Notification,
+        order: [['createdAt', 'desc']],
+      },
     });
     if (user) {
       const isMatched = await bcrypt.compare(password, user.password);
@@ -125,6 +131,7 @@ module.exports.login = async (req, res, next) => {
           last_name: user.last_name,
           bio: user.bio,
           is_admin: user.is_admin,
+          notifications: user.notifications,
         };
         return res.json({
           user: userData,
@@ -149,29 +156,36 @@ module.exports.login = async (req, res, next) => {
 
 // Get Logged in user
 module.exports.getLoggedInUser = async (req, res, next) => {
-  var token = req.headers.authorization;
-  if (token) {
-    // verifies secret and checks if the token is expired
-    let id = -1;
-    jwt.verify(token.replace(/^Bearer\s/, ''), process.env.AUTH_SECRET, (err, decoded) => {
-      if (err) {
-        let err = new Error('Unauthorized');
-        err.field = 'login';
-        return next(err);
-      } else id = decoded.id;
-    });
-    console.log(id);
-    const user = await User.findOne({
-      where: {
-        id: id,
-        is_verified: true,
-      },
-    });
-    return res.json({ status: 'success', user: user });
-  } else {
-    let err = new Error('Unauthorized');
-    err.field = 'login';
-    return next(err);
+  try {
+    var token = req.headers.authorization;
+    if (token) {
+      // verifies secret and checks if the token is expired
+      let id = -1;
+      jwt.verify(token.replace(/^Bearer\s/, ''), process.env.AUTH_SECRET, (err, decoded) => {
+        if (err) {
+          let err = new Error('Unauthorized');
+          err.field = 'login';
+          return next(err);
+        } else id = decoded.id;
+      });
+      console.log(id);
+      const user = await User.findOne({
+        where: {
+          id: id,
+          is_verified: true,
+        },
+        include: {
+          model: Notification,
+          order: [['createdAt', 'desc']],
+        },
+      });
+      if (!user) throw new createHttpError.Unauthorized();
+      return res.json({ status: 'success', user: user });
+    } else {
+      throw new createHttpError.Unauthorized();
+    }
+  } catch (error) {
+    return next(error);
   }
 };
 
@@ -207,6 +221,7 @@ module.exports.updateProfile = async (req, res, next) => {
       result: req.body,
     });
   } catch (err) {
+    console.log(err);
     return next(err);
   }
 };
@@ -399,6 +414,18 @@ module.exports.searchUser = async (req, res, next) => {
     });
     console.log(users);
     return res.json(users);
+  } catch (err) {
+    console.log(err);
+    return next(err);
+  }
+};
+
+module.exports.updateReadNotification = async (req, res, next) => {
+  try {
+    const is_read = req.body.is_read;
+    const notificationIds = req.body.ids;
+    await notificationQuery.updateNotificationRead(is_read, notificationIds);
+    res.json({});
   } catch (err) {
     console.log(err);
     return next(err);

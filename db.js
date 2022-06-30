@@ -31,6 +31,12 @@ const Channel = ChannelModel(sequelize, Classroom);
 const { MessageModel } = require('./models/Message');
 const Message = MessageModel(sequelize, Channel, User);
 
+const { AttachmentModel } = require('./models/Attachment');
+const Attachment = AttachmentModel(sequelize, Channel, User);
+
+const { NotificationModel } = require('./models/Notification');
+const Notification = NotificationModel(sequelize, Channel, User);
+
 const { EventModel } = require('./models/Event');
 const Event = EventModel(sequelize);
 
@@ -80,14 +86,34 @@ User.hasMany(Event, {
   onDelete: 'CASCADE',
 });
 
-// Invitation.belongsTo(User, {
-//   foreignKey: { key: "senderId", allowNull: false },
-//   onDelete: "CASCADE",
-// });
-// User.hasMany(Invitation, {
-//   foreignKey: { key: "senderId", allowNull: false },
-//   onDelete: "CASCADE",
-// });
+Event.belongsTo(Classroom, {
+  foreignKey: 'room_id',
+  onDelete: 'CASCADE',
+});
+Classroom.hasMany(Event, {
+  foreignKey: 'room_id',
+  onDelete: 'CASCADE',
+});
+
+Notification.belongsTo(User, {
+  foreignKey: 'user_id',
+  onDelete: 'CASCADE',
+});
+User.hasMany(Notification, {
+  foreignKey: 'user_id',
+  onDelete: 'CASCADE',
+});
+
+// Message
+Message.hasMany(Attachment, {
+  foreignKey: { allowNull: true },
+  onDelete: 'CASCADE',
+});
+
+Attachment.belongsTo(Message, {
+  foreignKey: { allowNull: true },
+  onDelete: 'CASCADE',
+});
 
 if (process.env.MIGRATE_DB == 'TRUE') {
   sequelize.sync().then(() => {
@@ -103,4 +129,6 @@ module.exports = {
   Message,
   ClassroomMember,
   Event,
+  Notification,
+  Attachment
 };

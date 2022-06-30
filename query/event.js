@@ -1,4 +1,4 @@
-const { Event } = require("../db");
+const { Event, Classroom, ClassroomMember } = require("../db");
 const { Op } = require("sequelize");
 
 module.exports.getEventById = async (eventId) => {
@@ -45,6 +45,14 @@ module.exports.updateEventById = async (eventId, event) => {
   return await Event.update(event, {
     where: {
       id: eventId,
+    },
+  });
+}
+
+module.exports.updateEventByOriginEventId = async (eventId, event) => {
+  return await Event.update(event, {
+    where: {
+      origin_event: eventId,
     },
   });
 }

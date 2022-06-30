@@ -35,7 +35,7 @@ class SocketServer {
 }
 
 module.exports = {
-  _socketServer: 1,
+  _socketServer: null,
   _userConnected: {},
   _rooms: {},
   _channel: {},
@@ -51,7 +51,7 @@ module.exports = {
       allowEIO3: true,
     });
     // this._socketServer = io;
-    console.log('initialSocket');
+    console.log('initialedSocket');
     instrument(this._socketServer, {
       auth: false,
     });
@@ -95,6 +95,13 @@ module.exports = {
   leaveCurrentChannel(socketId) {
     delete this._channel[this._userConnected[socketId]?.activeIn][socketId];
     delete this._userConnected[socketId].activeIn;
+  },
+
+  announceNewNotificationToUser(user_id, notification) {
+    const userOnline = Object.keys(this._userConnected).filter((socketId) => this._userConnected[socketId].id === user_id)
+    console.log(userOnline);
+    if (!userOnline) return;
+    this._socketServer.to(userOnline).emit('newNotification', notification);
   },
 
   initConferenceNameSpaceRoom: function (id) {
