@@ -27,8 +27,8 @@ router.delete('/classrooms/:id/member', [authenticateToken], classroomsControlle
 
 // router.post('/classrooms/:id/event', [authenticateToken], classroomsController.create);
 router.post('/classrooms/:id/event', [authenticateToken], classroomsController.createEventForRoom);
-// router.put('/classrooms/:id/event', [authenticateToken], classroomsController.update);
-// router.delete('/classrooms/:id/event', [authenticateToken], classroomsController.delete);
+router.put('/classrooms/:id/event', [authenticateToken], classroomsController.updateEventForRoom);
+router.delete('/classrooms/:id/event', [authenticateToken], classroomsController.deleteEventForRoom);
 
 // router.put('/classrooms/:id/invite', [authenticateToken], classroomsController.updateRole);
 

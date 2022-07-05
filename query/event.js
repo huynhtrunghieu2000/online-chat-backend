@@ -1,5 +1,5 @@
-const { Event, Classroom, ClassroomMember } = require("../db");
-const { Op } = require("sequelize");
+const { Event, Classroom, ClassroomMember } = require('../db');
+const { Op } = require('sequelize');
 
 module.exports.getEventById = async (eventId) => {
   return await Event.findOne({
@@ -30,16 +30,27 @@ module.exports.getEvents = async (query) => {
       ],
     },
   });
-}
+};
 
 module.exports.getEventsByUserId = async (userId) => {
   return await Event.findAll({
     where: {
       user_id: userId,
     },
-    exclude: 'user_id'
+    exclude: 'user_id',
   });
-}
+};
+
+module.exports.getEventsByOriginEventId = async (eventId) => {
+  return await Event.findAll({
+    where: {
+      origin_event: eventId,
+      user_id: {
+        [Op.not]: null,
+      },
+    },
+  });
+};
 
 module.exports.updateEventById = async (eventId, event) => {
   return await Event.update(event, {
@@ -47,7 +58,7 @@ module.exports.updateEventById = async (eventId, event) => {
       id: eventId,
     },
   });
-}
+};
 
 module.exports.updateEventByOriginEventId = async (eventId, event) => {
   return await Event.update(event, {
@@ -55,7 +66,15 @@ module.exports.updateEventByOriginEventId = async (eventId, event) => {
       origin_event: eventId,
     },
   });
-}
+};
+
+module.exports.deleteEventByOriginEventId = async (eventId) => {
+  return await Event.destroy({
+    where: {
+      origin_event: eventId,
+    },
+  });
+};
 
 module.exports.deleteEventById = async (eventId) => {
   return await Event.destroy({
@@ -63,7 +82,7 @@ module.exports.deleteEventById = async (eventId) => {
       id: eventId,
     },
   });
-}
+};
 
 module.exports.getEventsByUserIdAndDate = async (userId, date) => {
   return await Event.findAll({
@@ -77,4 +96,4 @@ module.exports.getEventsByUserIdAndDate = async (userId, date) => {
       },
     },
   });
-}
+};

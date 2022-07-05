@@ -328,16 +328,19 @@ module.exports.createEventForRoom = async (req, res, next) => {
       room_id: classroomId,
       created_by: id,
     });
-    console.log("🚀 ~ file: classroomsController.js ~ line 336 ~ module.exports.createEventForRoom= ~ roomEvent", roomEvent)
+    console.log(
+      '🚀 ~ file: classroomsController.js ~ line 336 ~ module.exports.createEventForRoom= ~ roomEvent',
+      roomEvent
+    );
     await Promise.all(
       listUserInRoom.map((userId) => {
-        console.log('==== create event for user id', userId ,'by' , id);
+        console.log('==== create event for user id', userId, 'by', id);
         return (async () => {
           await eventQuery.createNewEvent({
             ...event,
             user_id: userId,
             created_by: id,
-            origin_event: roomEvent.dataValues.id
+            origin_event: roomEvent.dataValues.id,
           });
           if (Number(userId) === Number(id)) return;
           console.log('==== create notification for user id', userId);
@@ -364,34 +367,49 @@ module.exports.createEventForRoom = async (req, res, next) => {
 };
 module.exports.updateEventForRoom = async (req, res, next) => {
   try {
-    const eventId = req.body.id;
+    const roomId = req.body.id;
+    const eventId = req.body.event.id;
     const { id, email, first_name, last_name } = jwt.decode(req.headers.authorization.split(' ')[1]);
-    const event = req.body.event;
-    console.log(req.body);
-    const listUserInRoom = await classroomQuery.getUserIdsInRoom(classroomId);
+    const event = { ...req.body.event };
+    delete event.createdAt;
+    delete event.created_by;
+    delete event.updatedAt;
+    delete event.deletedAt;
+    delete event.room_id;
+    delete event.user_id;
+    delete event.id;
+    delete event.origin_event;
+
     const roomEvent = await eventQuery.updateEventById(eventId, {
       ...event,
     });
-    console.log(
-      listUserInRoom.map((userId) => {
-        console.log('==== update event for user id', userId);
+    await eventQuery.updateEventByOriginEventId(eventId, event);
+    const memberEvents = await eventQuery.getEventsByOriginEventId(eventId);
+    const memberAffected = memberEvents.map((event) => event.dataValues.user_id);
+    await Promise.all(
+      memberAffected.map((userId) => {
         return (async () => {
-          await eventQuery.updateEventByOriginEventId(eventId, event);
-          if (Number(userId) === Number(id)) return;
-          const newNotification = await notificationQuery.addNotification('Event updated', NotificationTypes.EVENT_CHANGED, userId, {
-            updated_by: {
-              id,
-              email,
-              first_name,
-              last_name,
-            },
-            event,
-          });
-          socketServer.announceNewNotificationToUser(userId, newNotification);
+          if (userId !== id) {
+            console.log('==== notify update event for user id', userId);
+            const newNotification = await notificationQuery.addNotification(
+              'Event updated',
+              NotificationTypes.EVENT_CHANGED,
+              userId,
+              {
+                updated_by: {
+                  id,
+                  email,
+                  first_name,
+                  last_name,
+                },
+                event,
+              }
+            );
+            socketServer.announceNewNotificationToUser(userId, newNotification);
+          }
         })();
       })
     );
-
     res.json(roomEvent);
   } catch (err) {
     console.log(err);
@@ -400,43 +418,49 @@ module.exports.updateEventForRoom = async (req, res, next) => {
 };
 module.exports.deleteEventForRoom = async (req, res, next) => {
   try {
-    const classroomId = req.body.id;
+    const roomId = req.body.id;
+    const eventId = req.body.event.id;
     const { id, email, first_name, last_name } = jwt.decode(req.headers.authorization.split(' ')[1]);
-    const event = req.body.event;
-    console.log(req.body);
-    const listUserInRoom = await classroomQuery.getUserIdsInRoom(classroomId);
-    console.log(
-      '🚀 ~ file: classroomsController.js ~ line 317 ~ module.exports.createEventForRoom= ~ listUserInRoom',
-      listUserInRoom
-    );
-    const roomEvent = await eventQuery.createNewEvent({
+    const event = { ...req.body.event };
+    delete event.createdAt;
+    delete event.created_by;
+    delete event.updatedAt;
+    delete event.deletedAt;
+    delete event.room_id;
+    delete event.user_id;
+    delete event.id;
+    delete event.origin_event;
+
+    const memberEvents = await eventQuery.getEventsByOriginEventId(eventId);
+    const roomEvent = await eventQuery.deleteEventById(eventId, {
       ...event,
-      room_id: classroomId,
-      created_by: id,
     });
-    console.log(
-      listUserInRoom.map((userId) => {
-        console.log('==== create event for user id', userId);
+    await eventQuery.deleteEventByOriginEventId(eventId);
+    const memberAffected = memberEvents.map((event) => event.dataValues.user_id);
+    await Promise.all(
+      memberAffected.map((userId) => {
         return (async () => {
-          await eventQuery.createNewEvent({
-            ...event,
-            user_id: userId,
-            created_by: id,
-          });
-          const newNotification = await notificationQuery.addNotification('', NotificationTypes.EVENT_INVITED, userId, {
-            created_by: {
-              id,
-              email,
-              first_name,
-              last_name,
-            },
-            event,
-          });
-          socketServer.announceNewNotificationToUser(userId, newNotification);
+          if (userId !== id) {
+            console.log('==== notify update event for user id', userId);
+            const newNotification = await notificationQuery.addNotification(
+              'Event updated',
+              NotificationTypes.EVENT_REMOVED,
+              userId,
+              {
+                updated_by: {
+                  id,
+                  email,
+                  first_name,
+                  last_name,
+                },
+                event,
+              }
+            );
+            socketServer.announceNewNotificationToUser(userId, newNotification);
+          }
         })();
       })
     );
-
     res.json(roomEvent);
   } catch (err) {
     console.log(err);

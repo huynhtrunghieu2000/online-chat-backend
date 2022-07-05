@@ -98,8 +98,7 @@ module.exports = {
   },
 
   announceNewNotificationToUser(user_id, notification) {
-    const userOnline = Object.keys(this._userConnected).filter((socketId) => this._userConnected[socketId].id === user_id)
-    console.log(userOnline);
+    const userOnline = Object.keys(this._userConnected).filter((socketId) => this._userConnected[socketId].id === user_id)[0]
     if (!userOnline) return;
     this._socketServer.to(userOnline).emit('newNotification', notification);
   },

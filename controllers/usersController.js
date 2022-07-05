@@ -302,7 +302,7 @@ module.exports.forgotPassword = async (req, res, next) => {
       },
     });
 
-    var verificationLink = `${process.env.CLIENT_URL}/forgot-password-verify/?token=${token}`;
+    var verificationLink = `${process.env.CLIENT_URL}/auth/forgot-password-verify/?token=${token}`;
 
     var mailOptions = {
       from: process.env.MAIL_FROM,
@@ -339,7 +339,7 @@ module.exports.forgotPasswordVerify = async (req, res, next) => {
     if (user) {
       return res.json({
         message: 'Validation link passed',
-        type: 'success',
+        status: 'success',
       });
     } else {
       let err = new Error('Invalid token provided');
@@ -406,6 +406,7 @@ module.exports.searchUser = async (req, res, next) => {
             },
           },
         ],
+        is_verified: true,
       },
       attributes: ['id', 'email', 'first_name', 'last_name', 'avatar'],
       include: {
