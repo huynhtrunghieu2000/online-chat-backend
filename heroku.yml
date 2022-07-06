@@ -33,6 +33,4 @@ build:
     web: Dockerfile
 
 run:
-  web: cd usr/src
-run:
-  web: ls
+  web: docker exec -it b2b21d9b3368c493c85de95d03d078cbc56b4b447735e8c821f486be2947ed95 bash
