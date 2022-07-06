@@ -33,4 +33,4 @@ build:
     web: Dockerfile
 
 run:
-  web: lss
+  web: ls
