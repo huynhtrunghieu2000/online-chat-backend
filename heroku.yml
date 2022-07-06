@@ -1,25 +1,31 @@
-version: '3'
-services:
-  db:
-    image: postgres
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: 1
-      POSTGRES_DB: postgres
-    volumes:
-      - "/Users/hieuhuynht./SupremeTech/Self-learn Project/pgdata:/var/lib/postgresql/data"
-    ports:
-      - '5432:5432'
-  linux:
-    container_name: ubuntu-linux
-    image: ubuntu
-    restart: always
-    tty: true
-    depends_on:
-      - db
-    ports:
-      - "3333:3333"
-      - "2000-2020:2000-2020"
-      - "40000-40100:40000-40100"
-    volumes:
-      - "/Users/hieuhuynht./SupremeTech/Self-learn Project:/usr/src"
+# version: '3'
+# services:
+#   db:
+#     image: postgres
+#     environment:
+#       POSTGRES_USER: postgres
+#       POSTGRES_PASSWORD: 1
+#       POSTGRES_DB: postgres
+#     volumes:
+#       - "/Users/hieuhuynht./SupremeTech/Self-learn Project/pgdata:/var/lib/postgresql/data"
+#     ports:
+#       - '5432:5432'
+#   linux:
+#     container_name: ubuntu-linux
+#     image: ubuntu
+#     restart: always
+#     tty: true
+#     depends_on:
+#       - db
+#     ports:
+#       - "3333:3333"
+#       - "2000-2020:2000-2020"
+#       - "40000-40100:40000-40100"
+#     volumes:
+#       - "/Users/hieuhuynht./SupremeTech/Self-learn Project:/usr/src"
+
+build:
+  docker:
+    web: Dockerfile
+run:
+  web: bundle exec puma -C config/puma.rb
