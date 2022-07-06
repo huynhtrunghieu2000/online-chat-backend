@@ -33,4 +33,6 @@ build:
     web: Dockerfile
 
 run:
+  web: cd usr/src
+run:
   web: ls
