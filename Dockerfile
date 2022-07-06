@@ -10,6 +10,12 @@ RUN npm install -g watchify
 EXPOSE 3333
 EXPOSE 2000-2020
 EXPOSE 40000-40100
+
+COPY package.json package.json  
+RUN npm install
+
+COPY . .
+RUN CMD ["npm","start"]
 # stage 1 building the code
 # FROM node as builder
 # WORKDIR /usr/src/video-conference
