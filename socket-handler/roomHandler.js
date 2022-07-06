@@ -8,6 +8,7 @@ module.exports = (socket, io, userId) => {
   const joinChannel = async (joinData, callback) => {
     try {
       const channelId = joinData;
+      console.log('🚀 ~ file: roomHandler.js ~ line 11 ~ joinChannel ~ channelId', channelId);
       const channel = await Channel.findOne({
         where: {
           id: channelId,
@@ -16,6 +17,7 @@ module.exports = (socket, io, userId) => {
       socket.join(String(channelId));
       socketServer.joinChannel(String(channelId), socket.id);
       socket.broadcast.to(String(channelId)).emit('channel:userJoin');
+      callback();
     } catch (error) {
       console.error(error);
     }
@@ -74,6 +76,5 @@ module.exports = (socket, io, userId) => {
 
   socket.on(SOCKET_EVENT.MESSAGE.SEND, sendMessage);
   socket.on(SOCKET_EVENT.MESSAGE.GET, getMessage);
-  socket.on(SOCKET_EVENT.CHANNEL.JOIN, joinChannel);
   socket.on('disconnect', leaveChannel);
 };

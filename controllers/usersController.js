@@ -131,10 +131,12 @@ module.exports.login = async (req, res, next) => {
           last_name: user.last_name,
           bio: user.bio,
           is_admin: user.is_admin,
-          notifications: user.notifications,
         };
         return res.json({
-          user: userData,
+          user: {
+            ...userData,
+            notifications: user.notifications
+          },
           token: jwt.sign(userData, process.env.AUTH_SECRET, {
             expiresIn: '7d',
           }), // Expires in 2 Hour

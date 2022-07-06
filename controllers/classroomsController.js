@@ -43,7 +43,6 @@ module.exports.getAll = async (req, res, next) => {
           },
         },
       });
-      console.log(classrooms.map((classroom) => classroom.get({ plain: true })));
       res.json(classrooms);
     }
   } catch (err) {
