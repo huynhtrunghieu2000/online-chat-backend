@@ -154,6 +154,15 @@ module.exports.delete = async (req, res, next) => {
 
     const isAdminOfRoom = await classroomQuery.isAdminOfRoom(id, classroomId);
     if (is_admin || isAdminOfRoom) {
+      const listUserInRoom = await classroomQuery.getUserIdsInRoom(classroomId);
+      const deletedMember = await ClassroomMember.destroy({
+        where: {
+          UserId: {
+            [Op.in] : listUserInRoom,
+          },
+          ClassroomId: classroomId
+        }
+      })
       const deleted = await Classroom.destroy({
         where: {
           id: {

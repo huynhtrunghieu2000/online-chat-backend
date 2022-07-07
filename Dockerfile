@@ -11,7 +11,7 @@ EXPOSE 3333
 EXPOSE 2000-2020
 EXPOSE 40000-40100
 
-COPY package.json package.json  
+COPY package.json package.json
 RUN npm install
 
 COPY . .
