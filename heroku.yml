@@ -28,9 +28,10 @@ setup:
   addons:
   - plan: heroku-postgresql
     as: DATABASE
-build:
-  docker:
-    web: Dockerfile
+# build:
+#   docker:
+#     web: Dockerfile
 
-# run:
-#   web: docker exec -it b2b21d9b3368c493c85de95d03d078cbc56b4b447735e8c821f486be2947ed95 bash
+run:
+  # web: docker exec -it b2b21d9b3368c493c85de95d03d078cbc56b4b447735e8c821f486be2947ed95 bash
+  web: npm start
