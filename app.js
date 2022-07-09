@@ -16,7 +16,6 @@ const options = {
 };
 const server = https.createServer(options, app);
 
-socketServer.init(server);
 
 app.use(helmet());
 app.use(morgan("tiny"));
@@ -73,3 +72,5 @@ const port = process.env.PORT || 3000;
 server.listen(3333, () =>
   console.log(`🐹 app listening on http://localhost:${port}`)
 );
+
+socketServer.init(server);
