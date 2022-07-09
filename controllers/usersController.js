@@ -28,6 +28,9 @@ module.exports.signUp = async (req, res, next) => {
     const record = await User.create({
       email: email,
       password: password,
+      first_name: req.body.first_name,
+      last_name: req.body.last_name,
+      bio: req.body.bio,
       token: token,
       is_admin: numberOfUsers > 0 ? false : true,
     });
