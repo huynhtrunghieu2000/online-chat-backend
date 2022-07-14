@@ -55,8 +55,8 @@ function socketMain(io, channelId) {
     webRtcTransport: {
       listenIps: [
         {
-          ip: '0.0.0.0',
-          announcedIp: '127.0.0.1',
+          ip: process.env.HOST_PRIVATE_IP,
+          announcedIp: process.env.HOST_PUBLIC_IP,
         },
       ],
       enableUdp: true,

@@ -15,7 +15,7 @@ COPY package.json package.json
 RUN npm install
 
 COPY . .
-CMD ["npm","start"]
+# CMD ["npm","start"]
 # stage 1 building the code
 # FROM node as builder
 # WORKDIR /usr/src/video-conference
