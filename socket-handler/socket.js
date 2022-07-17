@@ -51,6 +51,13 @@ function onConnection(socket, io) {
   };
   socket.on('channel:join', joinChannel);
 
+  socket.on('get:list_online', (data, callback) => {
+    const { Users: userList } = data;
+    const userIdOnline = Object.keys(socketServer._userConnected).map(key => socketServer._userConnected[key].id);
+    console.log("🚀 ~ file: socket.js ~ line 57 ~ socket.on ~ userIdOnline", userIdOnline)
+    const newUserList = userList.map(user => userIdOnline.includes(user.id) ? {...user, isOnline: true} : user);
+    callback(newUserList);
+  })
   // const joinAllRoomNeeded = async (userId) => {
   //   const record = await userQuery.getUserByIdWithRoomJoined(userId);
   //   const ids = record.get({plain: true}).Classrooms.map((room) => room.id);

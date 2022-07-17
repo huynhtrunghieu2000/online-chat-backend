@@ -55,7 +55,7 @@ module.exports = (socket, io, userId) => {
         include: [
           {
             model: User,
-            attributes: ['id', 'full_name', 'email', 'avatar'],
+            attributes: ['id', 'first_name', 'last_name', 'bio', 'email', 'avatar'],
           },
           {
             model: Attachment,

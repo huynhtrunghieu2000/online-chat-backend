@@ -69,8 +69,8 @@ app.use((err, req, res, next) => {
 
 // Run the server
 const port = process.env.PORT || 3000;
-server.listen(3333, () =>
+server.listen(port, () =>
   console.log(`🐹 app listening on http://localhost:${port}`)
 );
 
-// socketServer.init(server);
+socketServer.init(server);

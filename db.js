@@ -44,6 +44,9 @@ const Notification = NotificationModel(sequelize, Channel, User);
 const { EventModel } = require('./models/Event');
 const Event = EventModel(sequelize);
 
+// const { ContactModel } = require('./models/Contact');
+// const Contact = ContactModel(sequelize);
+
 // const { InvitationModel } = require("./models/Invitation");
 // const Invitation = InvitationModel(sequelize);
 
@@ -118,6 +121,13 @@ Attachment.belongsTo(Message, {
   foreignKey: { allowNull: true },
   onDelete: 'CASCADE',
 });
+
+// // Contact
+// // User.hasMany(Contact, { as: 'requester'});
+// Contact.belongsTo(User, { as: 'requester'});
+
+// // User.hasMany(Contact, { as: 'receiver'})
+// Contact.belongsTo(User, { as: 'receiver'});
 
 if (process.env.MIGRATE_DB == 'TRUE') {
   sequelize.sync().then(() => {
